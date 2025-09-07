@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->bigInteger('power_count')->default(0);
 
             $table->tinyInteger('status')->default(0)->comment('添加能量状态，1成功，0待加，-1失败');
-            $table->text('fail_reason')->comment('失败原因');
+            $table->text('fail_reason')->nullable()->comment('失败原因');
 
             $table->datetimes(); // created_at, updated_at
 
