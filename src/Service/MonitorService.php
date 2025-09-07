@@ -36,14 +36,4 @@ class MonitorService implements MonitorAdapterInterface
     {
         Logger::debug("TronMonitor [{$tx->currency}] {$tx->from} -> {$tx->to} | {$tx->amount} | {$tx->tx_id}");
     }
-
-    function getCurrentBlock(): int
-    {
-        return $this->currentBlock;
-    }
-
-    function updateBlockNum(int $blockNum): void
-    {
-        $this->currentBlock = $blockNum;
-    }
 }

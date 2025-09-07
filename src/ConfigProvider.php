@@ -12,6 +12,7 @@ class ConfigProvider
         return [
             'dependencies' => [
                 MonitorAdapterInterface::class => MonitorService::class,
+                \Psr\SimpleCache\CacheInterface::class => \Hyperf\Cache\Cache::class,
             ],
             'commands' => [
             ],

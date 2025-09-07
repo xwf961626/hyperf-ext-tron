@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace William\HyperfExtTron\Monitor;
 
 use Psr\Container\ContainerInterface;
+use Psr\SimpleCache\CacheInterface;
+use William\HyperfExtTron\Constant\TronConstant;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Tron\Transaction;
 use William\HyperfExtTron\Tron\TronApi;
@@ -30,7 +32,7 @@ class TronMonitorProcess extends AbstractProcess
     protected Redis $redis;
     protected MonitorAdapterInterface $monitorAdapter;
 
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, private CacheInterface $cache)
     {
         parent::__construct($container);
         $this->scanner = $container->get(TronApi::class);
@@ -49,7 +51,7 @@ class TronMonitorProcess extends AbstractProcess
 
         while (true) {
             Logger::debug('扫块...');
-            $currentBlock = $this->monitorAdapter->getCurrentBlock()??$this->scanner->getLatestBlockNumber();
+            $currentBlock = $this->getCurrentBlock();
             try {
                 $latestBlock = $this->scanner->getLatestBlockNumber();
             } catch (Throwable $e) {
@@ -90,7 +92,7 @@ class TronMonitorProcess extends AbstractProcess
                 usleep(10000);
             }
 
-            $this->monitorAdapter->updateBlockNum($endBlock + 1);
+            $this->cache->set(TronConstant::CACHE_SCAN_CURRENT_BLOCK, $endBlock + 1);
         }
     }
 
@@ -168,5 +170,12 @@ class TronMonitorProcess extends AbstractProcess
             return '';
         }
         return (new Base58())->encode($bin);
+    }
+
+    private function getCurrentBlock(): int
+    {
+        $block = $this->cache->get(TronConstant::CACHE_SCAN_CURRENT_BLOCK) ?? $this->scanner->getLatestBlockNumber();
+        if ($block) return (int)$block;
+        return $this->scanner->getLatestBlockNumber();
     }
 }
