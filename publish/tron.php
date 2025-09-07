@@ -2,6 +2,7 @@
 
 return [
     'monitor' => [
+        'start_block' => false,
         'addresses' => [],
     ],
     'endpoint' => [
