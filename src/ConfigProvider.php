@@ -27,14 +27,17 @@ class ConfigProvider
             ],
             'publish' => [
                 [
-                    'id' => 'jwt',
-                    'description' => 'jwt-auth',
+                    'id' => 'tron',
+                    'description' => 'tron',
                     'source' => __DIR__ . '/../publish/tron.php',
                     'destination' => BASE_PATH . '/config/autoload/tron.php',
                 ],
-            ],
-            'migrations' => [
-                __DIR__ . '/Database/Migrations',
+                [
+                    'id' => 'migrations',
+                    'description' => 'tron migrations',
+                    'source' => __DIR__ . '/Database/Migrations/',
+                    'destination' => BASE_PATH . '/migrations/',
+                ],
             ],
             'routes' => function () {
                 $routesPath = __DIR__ . '/routes.php';
