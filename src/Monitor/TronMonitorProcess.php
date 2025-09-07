@@ -72,7 +72,9 @@ class TronMonitorProcess extends AbstractProcess
                     try {
                         Logger::debug("TronMonitorProcess#Scan block $blockNum");
                         $this->scanner->getBlockByNumber($blockNum, function ($block) use ($blockNum) {
-                            $this->handleBlock($blockNum, $block, $this->monitorAdapter->onTransaction);
+                            $this->handleBlock($blockNum, $block, function (Transaction $tx) {
+                                $this->monitorAdapter->onTransaction($tx);
+                            });
                         });
                     } catch (Throwable $e) {
                         Logger::error("Error scanning block {$blockNum}: " . $e->getMessage());
