@@ -49,7 +49,7 @@ class TronMonitorProcess extends AbstractProcess
 
         while (true) {
             Logger::debug('扫块...');
-            $currentBlock = $this->monitorAdapter->getCurrentBlock();
+            $currentBlock = $this->monitorAdapter->getCurrentBlock()??$this->scanner->getLatestBlockNumber();
             try {
                 $latestBlock = $this->scanner->getLatestBlockNumber();
             } catch (Throwable $e) {

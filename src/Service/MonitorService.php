@@ -24,8 +24,7 @@ class MonitorService implements MonitorAdapterInterface
     {
         $this->config = $container->get(ConfigInterface::class)->get(TronConstant::CONFIG_NAME, []);
         $this->addresses = $this->config['monitor']['addresses'];
-        $api = $container->get(TronApi::class);
-        $this->currentBlock = $this->config['monitor']['start_block'] ?? $api->getLatestBlockNumber();
+        $this->currentBlock = $this->config['monitor']['start_block']??0;
     }
 
     public function isMonitorAddress(string $address): bool
