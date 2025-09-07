@@ -1,5 +1,5 @@
 {
-  "name": "william/hyperf-ext-tron",
+  "name": "xwf961626/hyperf-ext-tron",
   "description": "A TRON reusable Hyperf module template with JWT and routes",
   "type": "library",
   "require": {
