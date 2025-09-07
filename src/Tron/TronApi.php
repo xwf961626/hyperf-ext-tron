@@ -88,7 +88,7 @@ class TronApi
                                      int    $balance,
                                      int    $permissionId,
                                      bool   $lock = false,
-                                     int    $lockPeriod = 0): array
+                                     int    $lockPeriod = 0): string
     {
         $params = [
             'owner_address' => $ownerAddress,
@@ -111,7 +111,7 @@ class TronApi
         }
     }
 
-    public function unDelegateResource($ownerAddress, $resource, $receiverAddress, $balance, $permissionId): array
+    public function unDelegateResource($ownerAddress, $resource, $receiverAddress, $balance, $permissionId): string
     {
         $params = [
             'owner_address' => $ownerAddress,
@@ -132,7 +132,7 @@ class TronApi
         }
     }
 
-    public function broadcastTransaction($tx): array
+    public function broadcastTransaction($tx): string
     {
         $tx['signature'] = [$this->sign($tx['txID'], $this->privateKey)];
         Logger::info('TronApi#broadcastTransaction => ' . json_encode($tx));
@@ -142,7 +142,7 @@ class TronApi
         Logger::info('TronApi#UndelegateResource => ' . $content);
         $result = json_decode($content, true);
         if (isset($result['result']) && $result['result'] === true) {
-            return $result;
+            return $result['txid'];
         } else {
             throw new \RuntimeException('TronApi#broadcasttransaction failed. API Response:' . $content);
         }
@@ -196,5 +196,23 @@ class TronApi
         } else {
             throw new \Exception($resp->getBody()->getContents());
         }
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    public function getResourcePrice(string $resource): float
+    {
+        $resource = strtoupper($resource);
+        $data = $this->getAccountResources('T9ya3Pck5BoPHfdHvSSPfDnZ5x2BDeEvvV');
+        if ($resource === 'ENERGY' && $data->totalEnergy > 0) {
+            $price = $data->totalEnergyWeight / $data->totalEnergy; //1个单位资源的价格
+            return $price;
+        }
+        if ($resource === 'BANDWIDTH' && $data->totalNet > 0) {
+            $price = $data->totalNetWeight / $data->totalNet; //1个单位资源的价格
+            return $price;
+        }
+        throw new \Exception('不支持的来源类型：' . $resource);
     }
 }

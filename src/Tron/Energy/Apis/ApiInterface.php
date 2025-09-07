@@ -3,6 +3,7 @@
 namespace William\HyperfExtTron\Tron\Energy\Apis;
 
 use GuzzleHttp\Exception\GuzzleException;
+use William\HyperfExtTron\Model\EnergyLog;
 
 interface ApiInterface
 {
@@ -19,7 +20,7 @@ interface ApiInterface
      * @param int $userId
      * @throws GuzzleException
      */
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): mixed;
+    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog;
 
     public function recycle(string $toAddress): mixed;
 

@@ -2,7 +2,9 @@
 
 namespace William\HyperfExtTron\Apis;
 
+use Carbon\Carbon;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use William\HyperfExtTron\Tron\Energy\Model\WeiduEnergyLog;
@@ -20,12 +22,13 @@ class Weidubot extends AbstractApi
     protected string $apiSecret;
 
 
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): WeiduEnergyLog
+    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
     {
-
+        $lockDuration = 0;
         // 兼容闪租设置
         if ($time == '30min' || $time == '5min') {
             $time = '1h';
+            $lockDuration = 60;
         }
         if (!$power || !$time) {
             Logger::error('EnergyAPI#Weidu 参数错误');
@@ -33,6 +36,7 @@ class Weidubot extends AbstractApi
         }
         if (ctype_digit($time)) {
             $time = $time . 'day';
+            $lockDuration = (int)$time * 60 * 24;
         }
         Logger::debug('时长：' . $time);
         $params = [
@@ -43,11 +47,16 @@ class Weidubot extends AbstractApi
 
         $this->validate($params);
 
-        $orderLog = new WeiduEnergyLog();
-        $orderLog->power = $power;
-        $orderLog->period = $time;
-        $orderLog->to_address = $toAddress;
+        $orderLog = new EnergyLog();
+        $orderLog->power_count = $power;
+        $orderLog->time = $time;
+        $orderLog->address = $toAddress;
         $orderLog->user_id = $userId;
+        $orderLog->energy_policy = $this->name();
+        $orderLog->lock_duration = $lockDuration;
+        if($lockDuration>0) {
+            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
+        }
         $orderLog->save();
 
         if (!env('WEIDU_ON', false)) {
@@ -61,15 +70,11 @@ class Weidubot extends AbstractApi
             $fee = $data['fee'];
             $amount = $data['amount'];
             $balance = $data['balance'];
-            $orderLog->order_sn = $orderSn;
             $orderLog->price = $price;
-            $orderLog->fee = $fee;
-            $orderLog->amount = $amount;
-            $orderLog->balance = $balance;
+            $orderLog->response_text = json_encode($data);
             $orderLog->save();
         } catch (GuzzleException $e) {
-            $orderLog->order_status = "error";
-            $orderLog->response_json = json_encode(['err' => $e->getMessage()]);
+            $orderLog->status = -1;
             $orderLog->fail_reason = $e->getMessage();
             $orderLog->save();
             throw $e;
@@ -91,19 +96,19 @@ class Weidubot extends AbstractApi
                         $txID = $info['tx_id'];
                         $fromAddress = $info['from_address'];
                         $count = $info['count'];
-                        $orderLog->order_status = 'success';
+                        $orderLog->status = 1;
                         $orderLog->tx_id = $txID;
                         $orderLog->from_address = $fromAddress;
-                        $orderLog->energy_count = $count;
-                        $orderLog->response_json = json_encode($detailData);
+                        $orderLog->power_count = $count;
+                        $orderLog->response_text = json_encode($detailData);
                         $orderLog->save();
                         return $orderLog;
                     }
                 }
             } catch (\Exception $e) {
                 Logger::debug('开始查询订单结果 #' . $attempt . '  异常：' . $e->getMessage());
-                $orderLog->order_status = "error";
-                $orderLog->response_json = json_encode(['err' => $e->getMessage()]);
+                $orderLog->status = -1;
+                $orderLog->fail_reason = $e->getMessage();
                 $orderLog->save();
             }
             $attempt++;

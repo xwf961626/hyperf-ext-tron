@@ -2,6 +2,7 @@
 
 namespace William\HyperfExtTron\Apis;
 
+use Carbon\Carbon;
 use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\ResourceDelegate;
@@ -31,11 +32,27 @@ class EnergyPool extends AbstractApi
     }
 
 
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): ResourceDelegate
+    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
     {
         $powerCount = $power;
-
+        $lockDuration = 0;
         Logger::debug("EnergyApi#EnergyPool 代理资源参数：$toAddress => power = $powerCount, time=$time, user_id= $userId");
+        if (str_contains($time, 'min')) {
+            $lockDuration = intval($time);
+        }
+
+        if (str_contains($time, 'day')) {
+            $lockDuration = intval($time) * 60 * 24;
+        }
+
+        if (str_contains($time, 'h')) {
+            $lockDuration = intval($time) * 60;
+        }
+
+        if (ctype_digit($time)) {
+            $time = $time . 'day';
+            $lockDuration = (int)$time * 60 * 24;
+        }
 
         $resourceAddress = $this->getUserResourceAddress($powerCount);
 
@@ -44,12 +61,24 @@ class EnergyPool extends AbstractApi
         }
         Logger::debug('EnergyApi#EnergyPool 使用地址：' . json_encode($resourceAddress));
 
+        $orderLog = new EnergyLog();
+        $orderLog->power_count = $power;
+        $orderLog->time = $time;
+        $orderLog->address = $toAddress;
+        $orderLog->user_id = $userId;
+        $orderLog->energy_policy = $this->name();
+        $orderLog->from_address = $resourceAddress->address;
+        $orderLog->lock_duration = $lockDuration;
+        if ($lockDuration > 0) {
+            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
+        }
+
         $price = $this->tron->getResourcePrice(self::SOURCE_ENERGY);
         Logger::debug('EnergyApi#EnergyPool 查询能量价格：' . $price);
         $amount = intval($powerCount * $price);
         Logger::debug('EnergyApi#EnergyPool 查询能量总金额：' . $amount);
         try {
-            if (!$hash = $this->tron->delegateResource($resourceAddress,
+            if (!$txid = $this->tron->delegateResource($resourceAddress,
                 $toAddress,
                 self::SOURCE_ENERGY,
                 $amount,
@@ -57,18 +86,24 @@ class EnergyPool extends AbstractApi
                 Logger::error("EnergyApi#EnergyPool 发送能量异常失败");
                 throw new \Exception('代理资源失败');
             }
-            Logger::debug('EnergyApi#EnergyPool 发送成功：' . $hash);
+            Logger::debug('EnergyApi#EnergyPool 发送成功：' . $txid);
+            $orderLog->tx_id = $txid;
+            $orderLog->status = 1;
+            $orderLog->save();
         } catch (\Exception $e) {
             Logger::debug('发送失败：' . $e->getMessage());
+            $orderLog->status = -1;
+            $orderLog->fail_reason = $e->getMessage();
+            $orderLog->save();
             throw new \Exception($e->getMessage());
         }
         try {
-            $this->tronupdateUserResourceAddress($resourceAddress);
+//            $this->updateUserResourceAddress($resourceAddress);
         } catch (\Exception $e) {
             Logger::debug("更新地址资源失败" . $e->getMessage());
         }
 
-        return $hash;
+        return $orderLog;
     }
 
     public function recycle(string $toAddress): mixed
@@ -80,7 +115,8 @@ class EnergyPool extends AbstractApi
         foreach ($logs as $log) {
             $addr = UserResourceAddress::find($log->resource_address_id);
             if ($addr) {
-                $this->tron->unDelegateResource($addr->address, 'ENERGY', $log->receive_address, $log->amount * 1_000_000);
+                $this->tron->unDelegateResource($addr->address, 'ENERGY', $log->receive_address,
+                    $log->amount * 1_000_000, $addr->permission);
             }
         }
         return null;
@@ -101,11 +137,9 @@ class EnergyPool extends AbstractApi
                 ->get();
             Logger::debug('自有能量池：' . json_encode($addrs));
             foreach ($addrs as $addr) {
-                $data = $this->trongetAccountResources($addr->address);
+                $data = $this->tron->getAccountResources($addr->address);
                 Logger::debug('查询自有地址能量：' . json_encode($data));
-                $energyUsed = $data['EnergyUsed'] ?? 0;
-                $energyLimit = $data['EnergyLimit'] ?? 0;
-                $currentEnergy = $energyLimit - $energyUsed;//(数量）
+                $currentEnergy = $data->currentEnergy;//(数量）
                 if ($currentEnergy >= $count) {
                     $addr->max_delegate_energy = $currentEnergy;
                     Logger::debug('找到能量足够的地址：' . $addr->address);
