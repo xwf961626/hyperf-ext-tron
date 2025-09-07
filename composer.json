@@ -36,10 +36,22 @@
       "William\\HyperfExtTron\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "HyperfTest\\": "./test/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
   "extra": {
     "hyperf": {
       "config": "William\\HyperfExtTron\\ConfigProvider",
       "migrations": "src/Database/Migrations"
     }
+  },
+  "scripts": {
+    "test": "co-phpunit --prepend test/bootstrap.php --colors=always"
   }
 }

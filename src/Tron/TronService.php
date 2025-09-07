@@ -2,23 +2,17 @@
 
 namespace William\HyperfExtTron\Tron;
 
-use William\HyperfExtTron\Helper\Logger;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
-use Hyperf\Redis\Redis;
-use Hyperf\Redis\RedisFactory;
 
 class TronService
 {
-    const TYPE_NODE_KEY = 'node';
-    const TYPE_SCAN_KEY = 'scan';
-    const API_KEY_CACHE_KEY = 'api_key_set';
+    const string TYPE_NODE_KEY = 'node';
+    const string TYPE_SCAN_KEY = 'scan';
+    const string API_KEY_CACHE_KEY = 'api_key_set';
 
-    protected Redis $redis;
-
-    public function __construct(RedisFactory $redisFactory)
+    public function __construct()
     {
-        $this->redis = $redisFactory->get('default');
     }
 
     public function addTronApiKey(RequestInterface $request): bool
@@ -32,24 +26,7 @@ class TronService
         foreach ($keys as $key) {
             $data[] = array_merge(['type' => $type], ['api_key' => $key]);
         }
-        $this->redis->del($type . self::API_KEY_CACHE_KEY);
         return TronApiKey::insert($data);
-    }
-
-    public function getCacheApiKeys(string $type = self::TYPE_NODE_KEY): array
-    {
-        try {
-            if (!$this->redis->exists($type . self::API_KEY_CACHE_KEY)) {
-                $keys = TronApiKey::where('type', $type)->where('status', 'active')->pluck('api_key')->toArray();
-                foreach ($keys as $key) {
-                    $this->redis->sAdd($type . self::API_KEY_CACHE_KEY, $key);
-                }
-            }
-            return $this->redis->sMembers($type . self::API_KEY_CACHE_KEY);
-        } catch (\Exception $e) {
-            Logger::error("查询APIKEY失败：{$e->getMessage()} {$e->getTraceAsString()}");
-        }
-        return [];
     }
 
     public static function registerAdminRoutes(): void

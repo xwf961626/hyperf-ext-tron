@@ -1,8 +1,9 @@
 <?php
 
-namespace William\HyperfExtTron\Tron\Energy\Apis;
+namespace William\HyperfExtTron\Apis;
 
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use William\HyperfExtTron\Tron\Energy\Model\WeiduEnergyLog;
 use GuzzleHttp\Client;

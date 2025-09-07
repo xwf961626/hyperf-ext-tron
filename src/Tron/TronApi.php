@@ -20,6 +20,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use kornrunner\Secp256k1;
 use kornrunner\Serializer\HexSignatureSerializer;
 use StephenHill\Base58;
+use function Hyperf\Config\config;
 use function Hyperf\Support\env;
 use function Hyperf\Support\make;
 
@@ -35,7 +36,7 @@ class TronApi
 
     public function __construct(protected TronService $service)
     {
-        $this->privateKey = env('TRON_PRIVATE_KEY');
+        $this->privateKey = config('tron.private_key', '');
         $startBlock = 0;
         $this->http = GuzzleClient::coroutineClient();
         $this->lastScannedBlock = $startBlock;

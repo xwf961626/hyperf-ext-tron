@@ -14,9 +14,8 @@ class EnergyApiFactory
 
     public function __construct()
     {
-        $configs = \Hyperf\Config\config('energy.apis');
+        $configs = \Hyperf\Config\config('tron.apis');
         Logger::debug('EnergyApi configs =>' . json_encode($configs));
-
         $classes = AnnotationCollector::getClassesByAnnotation(EnergyApi::class);
         foreach ($classes as $class => $annotation) {
             /** @var EnergyApi $annotation */
