@@ -33,6 +33,9 @@ class ConfigProvider
                     'destination' => BASE_PATH . '/config/autoload/tron.php',
                 ],
             ],
+            'migrations' => [
+                __DIR__ . '/Database/Migrations',
+            ],
             'routes' => function () {
                 $routesPath = __DIR__ . '/routes.php';
                 if (file_exists($routesPath)) {
