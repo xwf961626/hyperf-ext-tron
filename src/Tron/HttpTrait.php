@@ -10,11 +10,10 @@ trait HttpTrait
     /**
      * @throws GuzzleException
      */
-    public function post($uri, $data): \Psr\Http\Message\ResponseInterface
+    public function post($uri, $data, $keys = []): \Psr\Http\Message\ResponseInterface
     {
         static $lastIndex = -1; // 静态变量，跨调用保存上次位置
 
-        $keys = $this->service->getCacheApiKeys();
         $count = count($keys);
 
         if ($count === 0) {
@@ -35,11 +34,10 @@ trait HttpTrait
         ]);
     }
 
-    public function get($uri, $query=[]): \Psr\Http\Message\ResponseInterface
+    public function get($uri, $query=[], $keys = []): \Psr\Http\Message\ResponseInterface
     {
         static $lastIndex = -1; // 静态变量，跨调用保存上次位置
 
-        $keys = $this->service->getCacheApiKeys();
         $count = count($keys);
 
         if ($count === 0) {

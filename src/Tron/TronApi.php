@@ -62,7 +62,7 @@ class TronApi
      */
     public function getLatestBlockNumber(): int
     {
-        $res = $this->wallet->get("/wallet/getnowblock");
+        $res = $this->wallet->get("/wallet/getnowblock", [], $this->service->getCacheApiKeys());
         $data = json_decode($res->getBody()->getContents(), true);
         return $data['block_header']['raw_data']['number'] ?? 0;
     }
@@ -72,7 +72,7 @@ class TronApi
      */
     public function getBlockByNumber(int $blockNumber, callable $onBlock): bool
     {
-        $res = $this->wallet->post("/wallet/getblockbynum", ['num' => $blockNumber, 'visible' => true]);
+        $res = $this->wallet->post("/wallet/getblockbynum", ['num' => $blockNumber, 'visible' => true], $this->service->getCacheApiKeys());
         $block = json_decode($res->getBody()->getContents(), true);
         if (!isset($block['transactions'])) {
             return false;
@@ -99,7 +99,7 @@ class TronApi
             'lock_period' => $lockPeriod,
             'Permission_id' => $permissionId,
         ];
-        $res = $this->wallet->post("/wallet/delegateresource", $params);
+        $res = $this->wallet->post("/wallet/delegateresource", $params, $this->service->getCacheApiKeys());
         $content = $res->getBody()->getContents();
         Logger::info('TronApi#delegateResource => ' . $content);
         $tx = json_decode($content, true);
@@ -120,7 +120,7 @@ class TronApi
             "visible" => true,
             'Permission_id' => $permissionId,
         ];
-        $res = $this->wallet->post("/wallet/undelegateresource", $params);
+        $res = $this->wallet->post("/wallet/undelegateresource", $params, $this->service->getCacheApiKeys());
         $content = $res->getBody()->getContents();
         Logger::info('TronApi#UndelegateResource => ' . $content);
         $tx = json_decode($content, true);
@@ -135,7 +135,7 @@ class TronApi
     {
         $tx['signature'] = [$this->sign($tx['txID'], $this->privateKey)];
         Logger::info('TronApi#broadcastTransaction => ' . json_encode($tx));
-        $res = $this->wallet->post("/wallet/broadcasttransaction", $tx);
+        $res = $this->wallet->post("/wallet/broadcasttransaction", $tx, $this->service->getCacheApiKeys());
         Logger::info('TronApi#broadcasttransaction => ' . $res->getBody()->getContents());
         $content = $res->getBody()->getContents();
         Logger::info('TronApi#UndelegateResource => ' . $content);
@@ -188,7 +188,7 @@ class TronApi
         $resp = $this->wallet->post('/wallet/getaccountresource', [
             'address' => $address,
             'visible' => true,
-        ]);
+        ], $this->service->getCacheApiKeys());
         if ($resp->getStatusCode() == 200) {
             $result = json_decode($resp->getBody()->getContents());
             return AccountResource::of($result);
