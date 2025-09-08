@@ -3,14 +3,14 @@
 namespace William\HyperfExtTron;
 
 use Hyperf\Event\Contract\ListenerInterface;
-use Hyperf\Framework\Event\AfterWorkerStart;
+use Hyperf\Framework\Event\BootApplication;
 use William\HyperfExtTron\Helper\Logger;
 
 class RegisterRoutesListener implements ListenerInterface
 {
     public function listen(): array
     {
-        return [AfterWorkerStart::class,];
+        return [BootApplication::class,];
     }
 
     public function process(object $event): void
