@@ -33,12 +33,6 @@ class TronService
         return TronApiKey::insert($data);
     }
 
-    public static function registerAdminRoutes(): void
-    {
-        Router::get('/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@getTronApiKeyList');
-        Router::post('/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@addApiKey');
-    }
-
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface
     {
         $query = TronApiKey::query();

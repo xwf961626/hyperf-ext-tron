@@ -19,6 +19,8 @@ class RegisterRoutesListener implements ListenerInterface
         $routesPath = __DIR__ . '/routes.php';
         if (file_exists($routesPath)) {
             require $routesPath;
+        } else {
+            Logger::error("[hyperf-ext-tron] 注册路由失败：$routesPath 不存在");
         }
     }
 }
