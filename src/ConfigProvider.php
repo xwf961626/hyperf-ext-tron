@@ -17,7 +17,6 @@ class ConfigProvider
             'commands' => [
             ],
             'listeners' => [
-                RegisterRoutesListener::class,
             ],
             // 合并到  config/autoload/annotations.php 文件
             'annotations' => [
