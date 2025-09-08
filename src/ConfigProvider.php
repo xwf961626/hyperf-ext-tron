@@ -16,7 +16,9 @@ class ConfigProvider
             ],
             'commands' => [
             ],
-            'listeners' => [],
+            'listeners' => [
+                RegisterRoutesListener::class,
+            ],
             // 合并到  config/autoload/annotations.php 文件
             'annotations' => [
                 'scan' => [
@@ -38,13 +40,7 @@ class ConfigProvider
                     'source' => __DIR__ . '/Database/Migrations/',
                     'destination' => BASE_PATH . '/migrations/',
                 ],
-            ],
-            'routes' => function () {
-                $routesPath = __DIR__ . '/routes.php';
-                if (file_exists($routesPath)) {
-                    require $routesPath;
-                }
-            }
+            ]
         ];
     }
 }
