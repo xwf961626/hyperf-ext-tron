@@ -9,6 +9,9 @@ use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 
+/**
+ * https://trongas.io/pay/interface
+ */
 #[EnergyApi(name: Trongas::API_NAME)]
 class Trongas extends AbstractApi
 {
