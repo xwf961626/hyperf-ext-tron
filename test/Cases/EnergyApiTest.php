@@ -17,7 +17,7 @@ class EnergyApiTest extends TestCase
         /** @var EnergyApiFactory $factory */
         $factory = $this->container->get(EnergyApiFactory::class);
         /** @var Weidubot $api */
-        $api = $factory->get(EnergyApi::API_WEIDU);
+        $api = $factory->get(Weidubot::class);
         $name = $api->name();
         $this->assertEquals('weidu', $name);
     }

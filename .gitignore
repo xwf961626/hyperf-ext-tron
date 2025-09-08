@@ -4,3 +4,6 @@
 *.lock
 /config/
 .idea
+runtime
+.env
+/bin/

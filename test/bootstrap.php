@@ -27,6 +27,5 @@ require BASE_PATH . '/vendor/autoload.php';
 
 ClassLoader::init();
 
-$container = require BASE_PATH . '/test/container.php';
-
+$container = require BASE_PATH . '/config/container.php';
 $container->get(ApplicationInterface::class);

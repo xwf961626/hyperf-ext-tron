@@ -36,7 +36,7 @@ class ConfigProvider
                 [
                     'id' => 'migrations',
                     'description' => 'tron migrations',
-                    'source' => __DIR__ . '/Database/Migrations/',
+                    'source' => __DIR__ . '/../migrations/',
                     'destination' => BASE_PATH . '/migrations/',
                 ],
             ]

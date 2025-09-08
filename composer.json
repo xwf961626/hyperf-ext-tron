@@ -3,7 +3,8 @@
   "description": "A TRON reusable Hyperf module template with JWT and routes",
   "type": "library",
   "require": {
-    "php": ">=8.1"
+    "php": ">=8.1",
+    "ext-curl": "*"
   },
   "require-dev": {
     "hyperf/cache": "~3.1.0",
