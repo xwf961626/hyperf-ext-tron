@@ -4,6 +4,7 @@ namespace William\HyperfExtTron;
 
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\AfterWorkerStart;
+use William\HyperfExtTron\Helper\Logger;
 
 class RegisterRoutesListener implements ListenerInterface
 {
@@ -14,6 +15,7 @@ class RegisterRoutesListener implements ListenerInterface
 
     public function process(object $event): void
     {
+        Logger::debug("[hyperf-ext-tron] 注册路由");
         $routesPath = __DIR__ . '/routes.php';
         if (file_exists($routesPath)) {
             require $routesPath;
