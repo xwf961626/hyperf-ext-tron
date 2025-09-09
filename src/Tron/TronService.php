@@ -85,18 +85,6 @@ class TronService
 
     public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection
     {
-        $apis = config('tron.apis');
-        foreach ($apis as $api) {
-            $class = $api['class'];
-            $instance = $this->apiFactory->get($class);
-            $row = [
-                'name' => $instance->name(),
-                'api_key' => $instance->getApiKey(),
-                'url' => $instance->getBaseUrl(),
-                'balance' => $instance->getBalance(),
-            ];
-            Api::updateOrCreate(['name' => $instance->name()], $row);
-        }
         return Api::orderBy('weight', 'desc')->get();
     }
 

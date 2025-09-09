@@ -5,9 +5,11 @@ namespace William\HyperfExtTron\Apis;
 use Carbon\Carbon;
 use Exception;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
+use function Hyperf\Config\config;
 
 #[EnergyApi(name: CatFee::API_NAME)]
 class CatFee extends AbstractApi
@@ -18,8 +20,10 @@ class CatFee extends AbstractApi
     protected string $apiSecret = '';
     protected string $baseUrl = 'https://api.catfee.io';
 
+
     public function init($configs)
     {
+        $configs = config('tron.apis')[self::API_NAME];
         $this->apiKey = $configs['apiKey'];
         $this->apiSecret = $configs['apiSecret'];
         $this->baseUrl = $configs['baseUrl'];
@@ -31,13 +35,13 @@ class CatFee extends AbstractApi
     }
 
     // 生成当前的时间戳（ISO 8601格式）
-    function generateTimestamp()
+    private function generateTimestamp(): string
     {
         return gmdate("Y-m-d\TH:i:s.000\Z");
     }
 
 // 构建请求路径，包括查询参数
-    function buildRequestPath($path, $queryParams)
+    private function buildRequestPath($path, $queryParams): string
     {
         if (empty($queryParams)) {
             return $path;
@@ -47,7 +51,7 @@ class CatFee extends AbstractApi
     }
 
 // 使用 HMAC-SHA256 算法生成签名
-    function generateSignature($timestamp, $method, $requestPath)
+    private function generateSignature($timestamp, $method, $requestPath): string
     {
         $signString = $timestamp . $method . $requestPath;
         return base64_encode(hash_hmac('sha256', $signString, $this->apiSecret, true));
@@ -88,7 +92,6 @@ class CatFee extends AbstractApi
         }
         $orderLog->save();
 
-        $method = "POST";  // 可以修改为 "GET", "PUT", "DELETE" 等方法
         $path = "/v1/order";
 
         // 示例：创建订单
@@ -98,17 +101,13 @@ class CatFee extends AbstractApi
             "duration" => $time,
         ];
 
-        // 生成请求头
-        $timestamp = $this->generateTimestamp();
-        $requestPath = $this->buildRequestPath($path, $queryParams);
-        $signature = $this->generateSignature($timestamp, $method, $requestPath);
-
-        // 创建请求 URL
-        $url = $this->baseUrl . $requestPath;
-
         // 发送请求
         try {
-            $response = $this->createRequest($url, $method, $timestamp, $signature);
+            $response = $this->post($path, $queryParams);
+            // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
+            //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
+            //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
+            //"confirm_status":"UNCONFIRMED","balance":84595000}}
             Logger::debug("CatFee /v1/order Response Code: 200");
             Logger::debug("CatFee /v1/order Response Body: $response");
             $result = json_decode($response, true);
@@ -118,6 +117,9 @@ class CatFee extends AbstractApi
                 $orderLog->tx_id = $data['delegate_hash'];
                 $orderLog->status = 1;
                 $orderLog->save();
+
+                $this->model->balance = round($data['balance'] / 1_000_000, 6);
+                $this->model->save();
             } else {
                 throw new Exception("CatFee /v1/order fail: $response");
             }
@@ -131,8 +133,34 @@ class CatFee extends AbstractApi
     }
 
     // 创建 HTTP 请求
-    function createRequest($url, $method, $timestamp, $signature)
+
+    /**
+     * @throws Exception
+     */
+    function post($path, $queryParams = [])
     {
+        return $this->createRequest($path, 'POST', $queryParams);
+    }
+
+    /**
+     * @throws Exception
+     */
+    function get($path, $queryParams = [])
+    {
+        return $this->createRequest($path, 'GET', $queryParams);
+    }
+
+    private function createRequest($path, $method, $queryParams)
+    {
+        // 生成请求头
+        $timestamp = $this->generateTimestamp();
+
+        $requestPath = $this->buildRequestPath($path, $queryParams);
+
+        $signature = $this->generateSignature($timestamp, $method, $requestPath);
+        // 创建请求 URL
+        $url = $this->baseUrl . $requestPath;
+
         $headers = [
             "Content-Type: application/json",
             "CF-ACCESS-KEY: " . $this->apiKey,
@@ -167,12 +195,16 @@ class CatFee extends AbstractApi
 
         // 检查是否请求成功
         if (curl_errno($ch)) {
-            throw new Exception("cURL error: " . curl_error($ch));
+            throw new Exception("CatFee cURL error: " . curl_error($ch));
         }
 
         curl_close($ch);
-
-        return $response;
+        Logger::debug("CatFee $path Response Code: 200");
+        $result = json_decode($response, true);
+        if ($result['code'] === 1) {
+            return $result['data'];
+        }
+        throw new Exception($result['message']);
     }
 
 
@@ -193,15 +225,23 @@ class CatFee extends AbstractApi
 
     public function getApiKey(): string
     {
-        // TODO: Implement getApiKey() method.
+        return $this->apiKey;
     }
 
     public function getBaseUrl(): string
     {
-        // TODO: Implement getBaseUrl() method.
+        return $this->baseUrl;
     }
 
     public function getBalance(): float
     {
+        try {
+            $data = $this->get('/v1/account');
+            return $data['balance'];
+//            return $data['balance_usdt'];
+        } catch (Exception $e) {
+            Logger::error("CatFee /v1/account fail: " . $e->getMessage());
+            return 0;
+        }
     }
 }

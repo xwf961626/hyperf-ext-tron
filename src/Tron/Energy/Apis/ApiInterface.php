@@ -33,4 +33,6 @@ interface ApiInterface
     public function getBaseUrl(): string;
 
     public function getBalance(): float;
+
+    public function setModel(mixed $api);
 }

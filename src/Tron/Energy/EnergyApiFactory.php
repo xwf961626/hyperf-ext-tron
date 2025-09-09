@@ -4,10 +4,12 @@ namespace William\HyperfExtTron\Tron\Energy;
 
 
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Tron\Energy\Apis\ApiInterface;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Di\Annotation\AnnotationCollector;
+use function Hyperf\Config\config;
 use function Hyperf\Support\make;
 
 class EnergyApiFactory
@@ -17,26 +19,30 @@ class EnergyApiFactory
 
     public function __construct()
     {
-        $configs = \Hyperf\Config\config('tron.apis');
+        $configs = config('tron.apis');
         $this->configs = $configs;
-//        $classes = AnnotationCollector::getClassesByAnnotation(EnergyApi::class);
-//        foreach ($classes as $class => $annotation) {
-//            /** @var EnergyApi $annotation */
-//            $name = $annotation->name;
-//            Logger::debug("Found EnergyApi: {$name} @ {$class}");
-//            $instance = ApplicationContext::getContainer()->get($class);
-//            $instance->init($configs[$name]);
-//            $this->instances[$name] = $instance;
-//        }
+        foreach ($configs as $config) {
+            $class = $config['class'];
+            $this->instances[$class] = $this->create($class);
+        }
+    }
+
+    public function create(string $class): ApiInterface
+    {
+        /** @var ApiInterface $instance */
+        $instance = make($class);
+        $instance->init($this->configs[$instance->name()]);
+        $api = Api::updateOrCreate([
+            'name' => $instance->name(),
+            'api_key' => $instance->getApiKey(),
+            'url' => $instance->getBaseUrl(),
+        ]);
+        $instance->setModel($api);
+        return $instance;
     }
 
     public function get(string $name): ApiInterface
     {
-//        Logger::debug("Getting EnergyApi: {$name}");
-//        return $this->instances[$name] ?? null;
-        /** @var ApiInterface $instance */
-        $instance = make($name);
-        $instance->init($this->configs[$instance->name()]);
-        return $instance;
+        return $this->instances[$name];
     }
 }
