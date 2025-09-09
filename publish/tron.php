@@ -2,6 +2,7 @@
 
 use William\HyperfExtTron\Apis\CatFee;
 use William\HyperfExtTron\Apis\Trongas;
+use William\HyperfExtTron\Apis\Weidubot;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 
 return [
@@ -14,24 +15,24 @@ return [
         'full_node' => env('TRON_FULL_NODE', 'https://api.trongrid.io'),
         'solidity_node' => env('TRON_FULL_NODE_SOLIDITY', 'https://api.trongrid.io'),
     ],
+    // 自有能量池
+    'pool' => [],
     "apis" => [
-        // 自有能量池
-        EnergyApi::API_POOL => [
-
-        ],
         // 维度接口
-        EnergyApi::API_WEIDU => [
-            'send_api' => env('WEIDU_SEND_API', 'https://weidubot.cc/api/v2/'),
+        Weidubot::API_NAME => [
+            'class' => Weidubot::class,
+            'base_url' => env('WEIDU_API', 'https://weidubot.cc'),
             'api_key' => env('WEIDU_API_KEY', ''),
             'api_secret' => env('WEIDU_API_SECRET', ''),
-            'get_result_api' => env('WEIDU_GET_RESULT_API', ''),
         ],
         CatFee::API_NAME => [
+            'class' => CatFee::class,
             'baseUrl' => env('API_CAT_FEE', 'https://api.catfee.io'),
             'apiKey' => env('CAT_FEE_API_KEY', ''),
             'apiSecret' => env('CAT_FEE_API_SECRET', ''),
         ],
         Trongas::API_NAME => [
+            'class' => Trongas::class,
             'baseUrl' => env('TRONGAS_API', 'https://trongas.io'),
             'apiKey' => env('TRONGAS_API_KEY', ''),
         ],

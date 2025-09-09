@@ -58,4 +58,24 @@ class AdminController
             return $this->response->json(['code' => 0, 'msg' => $e->getMessage()]);
         }
     }
+
+    public function getApiList()
+    {
+        try {
+            $result = $this->service->getApiList($this->request);
+            return $this->response->json(['code' => 0, 'msg' => 'success', 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->response->json(['code' => 0, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    public function editApi()
+    {
+        try {
+            $result = $this->service->editApi($this->request);
+            return $this->response->json(['code' => 0, 'msg' => 'success', 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->response->json(['code' => 0, 'msg' => $e->getMessage()]);
+        }
+    }
 }

@@ -10,7 +10,7 @@ use William\HyperfExtTron\Tron\Energy\EnergyApiFactory;
  * @internal
  * @coversNothing
  */
-class EnergyApiTest extends TestCase
+class WeiduTest extends TestCase
 {
     public function testWeiduapi()
     {
@@ -20,5 +20,7 @@ class EnergyApiTest extends TestCase
         $api = $factory->get(Weidubot::class);
         $name = $api->name();
         $this->assertEquals('weidu', $name);
+        $result = $api->getBalance();
+        var_dump($result);
     }
 }

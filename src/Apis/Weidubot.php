@@ -14,10 +14,9 @@ use GuzzleHttp\Exception\GuzzleException;
 #[EnergyApi(name: 'weidu')]
 class Weidubot extends AbstractApi
 {
+    const API_NAME = 'weidu';
     protected string $apiKey;
-    protected string $sendApi;
-    protected string $getResultApi;
-
+    protected string $baseUrl;
     protected Client $client;
     protected string $apiSecret;
 
@@ -54,7 +53,7 @@ class Weidubot extends AbstractApi
         $orderLog->user_id = $userId;
         $orderLog->energy_policy = $this->name();
         $orderLog->lock_duration = $lockDuration;
-        if($lockDuration>0) {
+        if ($lockDuration > 0) {
             $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
         }
         $orderLog->save();
@@ -130,7 +129,7 @@ class Weidubot extends AbstractApi
             'x-timestamp' => $timestamp,
             'x-signature' => $sign
         ];
-        Logger::debug('headers: ' . json_encode($headers));
+        error_log('headers: ' . json_encode($headers));
         return $headers;
     }
 
@@ -144,7 +143,7 @@ class Weidubot extends AbstractApi
      */
     public function getOrderDetail(string $orderSN): array
     {
-        return $this->post($this->getResultApi, ['order_sn' => $orderSN]);
+        return $this->post('/api/v2/query_result', ['order_sn' => $orderSN]);
     }
 
     /**
@@ -167,10 +166,11 @@ class Weidubot extends AbstractApi
     public function init($configs)
     {
         $this->apiKey = $configs['api_key'];
-        $this->sendApi = $configs['send_api'];
-        $this->getResultApi = $configs['get_result_api'];
+        $this->baseUrl = $configs['base_url'];
         $this->apiSecret = $configs['api_secret'];
-        $this->client = new Client();
+        $this->client = new Client([
+            'base_uri' => $this->baseUrl,
+        ]);
     }
 
     /**
@@ -180,18 +180,18 @@ class Weidubot extends AbstractApi
     public function post(string $url, array $params)
     {
         $body = json_encode($params);
-        $response = $this->client->request('POST', $url, [
-            'body' => $body,
+        $response = $this->client->post($url, [
+            'json' => $params,
             'headers' => $this->getHeaders(),
             'http_errors' => false
         ]);
         $contents = $response->getBody()->getContents();
         if ($response->getStatusCode() !== 200) {
-            Logger::debug('EnergyAPI#Weidu ' . $url . ' POST  => ' . $body);
+            Logger::debug('Weidu ' . $url . ' POST  => ' . $body);
             Logger::debug('接口请求错误：' . $contents);
             throw new \Exception('接口请求错误: ' . $contents);
         } else {
-            Logger::debug("CardApi#QBit 接口返回成功 $contents");
+            Logger::debug("接口返回成功 $contents");
             return json_decode($contents, true);
         }
     }
@@ -201,7 +201,7 @@ class Weidubot extends AbstractApi
      */
     private function buyEnergy(array $params): ?array
     {
-        return $this->post($this->sendApi, $params);
+        return $this->post('/api/v2/buy_energy', $params);
     }
 
     public function getEnergyLogClass(): string
@@ -212,5 +212,33 @@ class Weidubot extends AbstractApi
     public function name(): string
     {
         return EnergyApi::API_WEIDU;
+    }
+
+    public function getApiKey(): string
+    {
+        return $this->apiKey;
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
+    }
+
+    public function getBalance(): float
+    {
+        $response = $this->client->get('/api/v2/user_info', ['headers' => $this->getHeaders(), 'http_errors' => false]);
+        $contents = $response->getBody()->getContents();
+        if ($response->getStatusCode() !== 200) {
+            Logger::debug('接口请求错误：' . $contents);
+            if ($response->getStatusCode() == 403) {
+                return 0;
+            }
+            throw new \Exception('接口请求错误: ' . $contents);
+        } else {
+            Logger::debug("接口返回成功 $contents");
+            $result = json_decode($contents, true);
+            return $result['data']['balance_trx']??0;
+//            return $result['data']['balance_usdt']??0;
+        }
     }
 }

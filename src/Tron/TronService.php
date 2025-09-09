@@ -6,6 +6,10 @@ use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
 use Psr\SimpleCache\CacheInterface;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\Api;
+use William\HyperfExtTron\Tron\Energy\EnergyApiFactory;
+use function Hyperf\Config\config;
+use function Hyperf\Support\make;
 
 class TronService
 {
@@ -13,7 +17,7 @@ class TronService
     const string TYPE_SCAN_KEY = 'scan';
     const string API_KEY_CACHE_KEY = 'api_key_set';
 
-    public function __construct(private CacheInterface $cache)
+    public function __construct(private CacheInterface $cache, protected EnergyApiFactory $apiFactory)
     {
     }
 
@@ -37,6 +41,8 @@ class TronService
     {
         Router::get('/admin/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@getTronApiKeyList');
         Router::post('/admin/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@addApiKey');
+        Router::get('/admin/apis', 'William\HyperfExtTron\Tron\AdminController@getApiList');
+        Router::put('/admin/apis', 'William\HyperfExtTron\Tron\AdminController@editApi');
     }
 
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface
@@ -75,6 +81,38 @@ class TronService
             Logger::error("查询APIKEY失败：{$e->getMessage()} {$e->getTraceAsString()}");
             return [];
         }
+    }
+
+    public function getApiList(RequestInterface $request): \Hyperf\Collection\Collection
+    {
+        $apis = config('tron.apis');
+        foreach ($apis as $api) {
+            $class = $api['class'];
+            $instance = $this->apiFactory->get($class);
+            $row = [
+                'name' => $instance->name(),
+                'api_key' => $instance->getApiKey(),
+                'url' => $instance->getBaseUrl(),
+                'balance' => $instance->getBalance(),
+            ];
+            Api::updateOrCreate(['name' => $instance->name()], $row);
+        }
+        return Api::orderBy('weight', 'desc')->get();
+    }
+
+    public function editApi(RequestInterface $request)
+    {
+        $id = $request->input('id');
+        $api = Api::find($id);
+        if (!$api) throw new \Exception("api未找到");
+        $updates = [];
+        if ($status = $request->input('status')) {
+            $updates['status'] = $status;
+        }
+        if ($weight = $request->input('weight')) {
+            $updates['weight'] = $weight;
+        }
+        return $api->update($updates);
     }
 
 }

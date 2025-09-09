@@ -190,4 +190,18 @@ class CatFee extends AbstractApi
     {
         return self::API_NAME;
     }
+
+    public function getApiKey(): string
+    {
+        // TODO: Implement getApiKey() method.
+    }
+
+    public function getBaseUrl(): string
+    {
+        // TODO: Implement getBaseUrl() method.
+    }
+
+    public function getBalance(): float
+    {
+    }
 }

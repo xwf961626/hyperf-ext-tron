@@ -7,3 +7,4 @@
 /runtime/
 .env
 /bin/
+/app/

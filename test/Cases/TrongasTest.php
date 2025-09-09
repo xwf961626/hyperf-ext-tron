@@ -17,6 +17,7 @@ class TrongasTest extends TestCase
         $api = $factory->get(Trongas::class);
         $name = $api->name();
         $this->assertEquals(Trongas::API_NAME, $name);
-        $api->send('TY21hRktYANtc92m1eGpQsoCsUXguP5sLq', 65000, '1h', 1);
+        $balance = $api->getBalance();
+        var_dump($balance);
     }
 }

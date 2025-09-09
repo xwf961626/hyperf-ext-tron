@@ -2,6 +2,7 @@
 
 namespace William\HyperfExtTron\Apis;
 
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
@@ -18,10 +19,14 @@ class Trongas extends AbstractApi
     const API_NAME = 'trongas';
     protected string $apiKey = '';
     protected Client $client;
+    protected string $baseUrl;
+    protected string $username;
 
     public function init($configs)
     {
         $this->apiKey = $configs['apiKey'];
+        $this->baseUrl = $configs['baseUrl'];
+        $this->username = $configs['username'];
         $this->client = GuzzleClient::coroutineClient(['base_uri' => $configs['baseUrl']]);
     }
 
@@ -39,8 +44,38 @@ class Trongas extends AbstractApi
             'receiveAddress' => $toAddress,
             'resLock' => 0,
         ];
+        $orderLog = new EnergyLog();
+        $orderLog->power_count = $power;
+        $orderLog->time = $time;
+        $orderLog->address = $toAddress;
+        $orderLog->user_id = $userId;
+        $orderLog->energy_policy = $this->name();
+//        $orderLog->lock_duration = $lockDuration;
+//        if ($lockDuration > 0) {
+//            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
+//        }
+        $orderLog->save();
+
         Logger::debug('参数：' . json_encode($params));
-        $resp = $this->client->post('/api/pay',  $params);
+        try {
+            $data = $this->post('/api/pay', $params);
+            $orderLog->response_text = json_encode($data);
+            $orderLog->tx_id = $data['delegate_hash'][0];
+            $orderLog->from_address = $data['sendAddressList'][0];
+            $orderLog->status = 1;
+            $orderLog->save();
+        } catch (\Exception $e) {
+            $orderLog->status = -1;
+            $orderLog->fail_reason = $e->getMessage();
+            $orderLog->save();
+        }
+
+        return $orderLog;
+    }
+
+    private function post($url, array $params = [])
+    {
+        $resp = $this->client->post($url, ['json'=>$params]);
         $statusCode = $resp->getStatusCode();
         Logger::debug('status=>' . $statusCode);
         Logger::debug("response:" . $resp->getBody());
@@ -71,5 +106,26 @@ class Trongas extends AbstractApi
     public function name(): string
     {
         return self::API_NAME;
+    }
+
+    public function getApiKey(): string
+    {
+        return $this->apiKey;
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
+    }
+
+    public function getBalance(): float
+    {
+        try {
+            $data = $this->post('/api/userInfo', ["username" => $this->username]);
+            return $data['balance'];
+        } catch (\Exception $e) {
+            error_log($e->getMessage().$e->getTraceAsString());
+            return 0;
+        }
     }
 }

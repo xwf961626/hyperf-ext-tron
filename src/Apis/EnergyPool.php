@@ -163,4 +163,19 @@ class EnergyPool extends AbstractApi
     {
         return EnergyApi::API_POOL;
     }
+
+    public function getApiKey(): string
+    {
+        return "";
+    }
+
+    public function getBaseUrl():string
+    {
+        return "";
+    }
+
+    public function getBalance(): float
+    {
+        return 0;
+    }
 }

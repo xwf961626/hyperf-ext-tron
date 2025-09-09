@@ -27,4 +27,10 @@ interface ApiInterface
     public function getEnergyLogClass();
 
     public function name(): string;
+
+    public function getApiKey(): string;
+
+    public function getBaseUrl(): string;
+
+    public function getBalance(): float;
 }
