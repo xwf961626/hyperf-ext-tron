@@ -35,6 +35,8 @@ return [
             'class' => Trongas::class,
             'baseUrl' => env('TRONGAS_API', 'https://trongas.io'),
             'apiKey' => env('TRONGAS_API_KEY', ''),
+            'username' => env('TRONGAS_USER', ''),
+            'password' => env('TRONGAS_PASSWORD', ''),
         ],
     ],
 ];

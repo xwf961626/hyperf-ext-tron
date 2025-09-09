@@ -83,7 +83,7 @@ class TronService
         }
     }
 
-    public function getApiList(RequestInterface $request): \Hyperf\Collection\Collection
+    public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection
     {
         $apis = config('tron.apis');
         foreach ($apis as $api) {
