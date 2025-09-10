@@ -18,7 +18,6 @@ class Weidubot extends AbstractApi
     const API_NAME = 'weidu';
     protected string $apiKey = '';
     protected string $baseUrl = 'https://weidubot.cc';
-    protected Client $client;
     protected string $apiSecret;
 
 
@@ -158,11 +157,6 @@ class Weidubot extends AbstractApi
         }
     }
 
-    public function recycle(string $toAddress): mixed
-    {
-        // TODO: Implement recycle() method.
-        return null;
-    }
 
     public function init($configs)
     {
@@ -181,11 +175,7 @@ class Weidubot extends AbstractApi
     public function post(string $url, array $params)
     {
         $body = json_encode($params);
-        $response = $this->client->post($url, [
-            'json' => $params,
-            'headers' => $this->getHeaders(),
-            'http_errors' => false
-        ]);
+        $response = $this->_post($url, $params);
         $contents = $response->getBody()->getContents();
         if ($response->getStatusCode() !== 200) {
             Logger::debug('Weidu ' . $url . ' POST  => ' . $body);
@@ -213,16 +203,6 @@ class Weidubot extends AbstractApi
     public function name(): string
     {
         return EnergyApi::API_WEIDU;
-    }
-
-    public function getApiKey(): string
-    {
-        return $this->apiKey;
-    }
-
-    public function getBaseUrl(): string
-    {
-        return $this->baseUrl;
     }
 
     public function getBalance(): float

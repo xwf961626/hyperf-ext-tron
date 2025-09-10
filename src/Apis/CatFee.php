@@ -14,10 +14,7 @@ use function Hyperf\Config\config;
 #[EnergyApi(name: CatFee::API_NAME)]
 class CatFee extends AbstractApi
 {
-
     const API_NAME = 'cateFee';
-    protected string $apiKey = '';
-    protected string $apiSecret = '';
     protected string $baseUrl = 'https://api.catfee.io';
 
 

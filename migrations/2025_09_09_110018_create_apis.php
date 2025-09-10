@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('url', 200);
             $table->string('api_key', 200);
             $table->string('api_secret', 200)->nullable();
+            $table->string('callback_url', 200)->nullable();
             $table->decimal('balance', 20, 6)->default(0);
             $table->bigInteger('price')->default(0);
             $table->enum('status', ['active', 'inactive'])->default('active');

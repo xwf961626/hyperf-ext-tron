@@ -15,7 +15,8 @@ use Hyperf\DbConnection\Model\Model;
  * @property string $balance 
  * @property int $price 
  * @property string $status 
- * @property int $weight 
+ * @property string|null $callback_url
+ * @property int $weight
  * @property \Carbon\Carbon $created_at 
  * @property \Carbon\Carbon $updated_at 
  */

@@ -17,17 +17,14 @@ use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 class Trongas extends AbstractApi
 {
     const API_NAME = 'trongas';
-    protected string $apiKey = '';
-    protected Client $client;
     protected string $baseUrl = "https://trongas.io";
-    protected string $username;
+    protected string $username = '';
 
     public function init($configs)
     {
         $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
         $this->baseUrl = $configs['baseUrl'];
         $this->username = $this->model->api_secret ?? $configs['username'];
-        $this->client = GuzzleClient::coroutineClient(['base_uri' => $configs['baseUrl']]);
     }
 
     public function validate($params)
@@ -75,7 +72,7 @@ class Trongas extends AbstractApi
 
     private function post($url, array $params = [])
     {
-        $resp = $this->client->post($url, ['json' => $params]);
+        $resp = $this->_post($url, $params);
         $statusCode = $resp->getStatusCode();
         Logger::debug('status=>' . $statusCode);
         Logger::debug("response:" . $resp->getBody());

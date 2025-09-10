@@ -2,6 +2,7 @@
 
 use William\HyperfExtTron\Apis\CatFee;
 use William\HyperfExtTron\Apis\Trongas;
+use William\HyperfExtTron\Apis\Trxx;
 use William\HyperfExtTron\Apis\Weidubot;
 
 return [
@@ -36,6 +37,13 @@ return [
             'apiKey' => env('TRONGAS_API_KEY', ''),
             'username' => env('TRONGAS_USER', ''),
             'password' => env('TRONGAS_PASSWORD', ''),
+        ],
+        Trxx::API_NAME => [
+            'class' => Trxx::class,
+            'baseUrl' => env('TRXX_API', 'https://trxx.io'),
+            'apiKey' => env('TRXX_API_KEY', ''),
+            'apiSecret' => env('TRXX_API_SECRET', ''),
+            'callbackUrl' => env('TRXX_CALLBACK_URL', ''),
         ],
     ],
 ];

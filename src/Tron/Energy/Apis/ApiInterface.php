@@ -3,6 +3,7 @@
 namespace William\HyperfExtTron\Tron\Energy\Apis;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Hyperf\HttpServer\Contract\RequestInterface;
 use William\HyperfExtTron\Model\EnergyLog;
 
 interface ApiInterface
@@ -35,4 +36,7 @@ interface ApiInterface
     public function getBalance(): float;
 
     public function setModel(mixed $api);
+
+    public function callbackUrl(): mixed;
+    public function getCallbackHandler(RequestInterface $request): callable|null;
 }
