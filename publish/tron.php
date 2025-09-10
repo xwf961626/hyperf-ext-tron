@@ -3,7 +3,6 @@
 use William\HyperfExtTron\Apis\CatFee;
 use William\HyperfExtTron\Apis\Trongas;
 use William\HyperfExtTron\Apis\Weidubot;
-use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 
 return [
     'private_key' => env('TRON_PRIVATE_KEY', ''),

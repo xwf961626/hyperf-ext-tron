@@ -24,8 +24,8 @@ class CatFee extends AbstractApi
     public function init($configs)
     {
         $configs = config('tron.apis')[self::API_NAME];
-        $this->apiKey = $configs['apiKey'];
-        $this->apiSecret = $configs['apiSecret'];
+        $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
+        $this->apiSecret = $this->model->api_secret ?? $configs['apiSecret'];
         $this->baseUrl = $configs['baseUrl'];
     }
 

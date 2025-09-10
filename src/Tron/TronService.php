@@ -16,6 +16,7 @@ class TronService
     const string TYPE_NODE_KEY = 'node';
     const string TYPE_SCAN_KEY = 'scan';
     const string API_KEY_CACHE_KEY = 'api_key_set';
+    const API_LIST_CACHE_KEY = 'api_list';
 
     public function __construct(private CacheInterface $cache, protected EnergyApiFactory $apiFactory)
     {
@@ -39,10 +40,10 @@ class TronService
 
     public static function registerAdminRoutes(): void
     {
-        Router::get('/admin/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@getTronApiKeyList');
-        Router::post('/admin/tron_api_keys', 'William\HyperfExtTron\Tron\AdminController@addApiKey');
-        Router::get('/admin/apis', 'William\HyperfExtTron\Tron\AdminController@getApiList');
-        Router::put('/admin/apis', 'William\HyperfExtTron\Tron\AdminController@editApi');
+        Router::get('/admin/tron_api_keys', [AdminController::class, 'getTronApiKeyList']);
+        Router::post('/admin/tron_api_keys', [AdminController::class, 'addApiKey']);
+        Router::get('/admin/apis', [AdminController::class, 'getApiList']);
+        Router::put('/admin/apis', [AdminController::class, 'editApi']);
     }
 
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface
@@ -83,9 +84,16 @@ class TronService
         }
     }
 
-    public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection
+    public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection|array
     {
-        return Api::orderBy('weight', 'desc')->get();
+        $cache = $this->cache->get(self::API_LIST_CACHE_KEY);
+        if ($cache) {
+            return json_decode($cache, true);
+        } else {
+            $results = Api::orderBy('weight', 'desc')->get()->toArray();
+            $this->cache->set(self::API_LIST_CACHE_KEY, json_encode($results));
+            return $results;
+        }
     }
 
     public function editApi(RequestInterface $request)
@@ -94,12 +102,22 @@ class TronService
         $api = Api::find($id);
         if (!$api) throw new \Exception("api未找到");
         $updates = [];
+        if ($baseUrl = $request->input('base_url')) {
+            $updates['url'] = $baseUrl;
+        }
         if ($status = $request->input('status')) {
             $updates['status'] = $status;
         }
         if ($weight = $request->input('weight')) {
             $updates['weight'] = $weight;
         }
+        if ($apiKey = $request->input('api_key')) {
+            $updates['api_key'] = $apiKey;
+        }
+        if ($apiSecret = $request->input('api_secret')) {
+            $updates['api_secret'] = $apiSecret;
+        }
+        $this->cache->delete(self::API_LIST_CACHE_KEY);
         return $api->update($updates);
     }
 

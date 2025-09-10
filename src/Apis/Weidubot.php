@@ -4,6 +4,7 @@ namespace William\HyperfExtTron\Apis;
 
 use Carbon\Carbon;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
@@ -15,8 +16,8 @@ use GuzzleHttp\Exception\GuzzleException;
 class Weidubot extends AbstractApi
 {
     const API_NAME = 'weidu';
-    protected string $apiKey;
-    protected string $baseUrl;
+    protected string $apiKey = '';
+    protected string $baseUrl = 'https://weidubot.cc';
     protected Client $client;
     protected string $apiSecret;
 
@@ -165,9 +166,9 @@ class Weidubot extends AbstractApi
 
     public function init($configs)
     {
-        $this->apiKey = $configs['api_key'];
+        $this->apiKey = $this->model->api_key ?? $configs['api_key'];
         $this->baseUrl = $configs['base_url'];
-        $this->apiSecret = $configs['api_secret'];
+        $this->apiSecret = $this->model->api_secret ?? $configs['api_secret'];
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
         ]);
@@ -237,7 +238,7 @@ class Weidubot extends AbstractApi
         } else {
             Logger::debug("接口返回成功 $contents");
             $result = json_decode($contents, true);
-            return $result['data']['balance_trx']??0;
+            return $result['data']['balance_trx'] ?? 0;
 //            return $result['data']['balance_usdt']??0;
         }
     }

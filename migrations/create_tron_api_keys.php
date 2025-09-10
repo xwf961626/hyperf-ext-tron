@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('tron_api_keys', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('api_key', 128);
+            $table->string('api_secret', 128);
             $table->enum('type', ['node', 'scan'])->default('node')->comment('node节点接口的apiKey,scan网页查询的apiKey');
             $table->enum('status', ['active', 'floodwait', 'invalid'])->default('active')
                 ->comment('状态：actvie正常，floodwait频率限制,invalid已失效');

@@ -19,14 +19,14 @@ class Trongas extends AbstractApi
     const API_NAME = 'trongas';
     protected string $apiKey = '';
     protected Client $client;
-    protected string $baseUrl;
+    protected string $baseUrl = "https://trongas.io";
     protected string $username;
 
     public function init($configs)
     {
-        $this->apiKey = $configs['apiKey'];
+        $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
         $this->baseUrl = $configs['baseUrl'];
-        $this->username = $configs['username'];
+        $this->username = $this->model->api_secret ?? $configs['username'];
         $this->client = GuzzleClient::coroutineClient(['base_uri' => $configs['baseUrl']]);
     }
 
@@ -75,7 +75,7 @@ class Trongas extends AbstractApi
 
     private function post($url, array $params = [])
     {
-        $resp = $this->client->post($url, ['json'=>$params]);
+        $resp = $this->client->post($url, ['json' => $params]);
         $statusCode = $resp->getStatusCode();
         Logger::debug('status=>' . $statusCode);
         Logger::debug("response:" . $resp->getBody());
@@ -124,7 +124,7 @@ class Trongas extends AbstractApi
             $data = $this->post('/api/userInfo', ["username" => $this->username]);
             return $data['balance'];
         } catch (\Exception $e) {
-            error_log($e->getMessage().$e->getTraceAsString());
+            error_log($e->getMessage() . $e->getTraceAsString());
             return 0;
         }
     }
