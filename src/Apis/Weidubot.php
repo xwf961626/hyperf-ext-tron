@@ -163,9 +163,6 @@ class Weidubot extends AbstractApi
         $this->apiKey = $this->model->api_key ?? $configs['api_key'];
         $this->baseUrl = $configs['base_url'];
         $this->apiSecret = $this->model->api_secret ?? $configs['api_secret'];
-        $this->client = new Client([
-            'base_uri' => $this->baseUrl,
-        ]);
     }
 
     /**

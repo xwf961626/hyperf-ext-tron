@@ -27,10 +27,6 @@ class Trongas extends AbstractApi
         $this->username = $this->model->api_secret ?? $configs['username'];
     }
 
-    public function validate($params)
-    {
-    }
-
     public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
     {
         $params = [
@@ -90,29 +86,10 @@ class Trongas extends AbstractApi
         }
     }
 
-    public function recycle(string $toAddress): mixed
-    {
-        return null;
-    }
-
-    public function getEnergyLogClass()
-    {
-        // TODO: Implement getEnergyLogClass() method.
-    }
 
     public function name(): string
     {
         return self::API_NAME;
-    }
-
-    public function getApiKey(): string
-    {
-        return $this->apiKey;
-    }
-
-    public function getBaseUrl(): string
-    {
-        return $this->baseUrl;
     }
 
     public function getBalance(): float
