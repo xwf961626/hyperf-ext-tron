@@ -16,6 +16,7 @@ use function Hyperf\Config\config;
 class Trxx extends AbstractApi
 {
     const API_NAME = 'trxx';
+    protected string $baseUrl = 'https://trxx.io';
 
     public function init($configs)
     {

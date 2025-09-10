@@ -33,12 +33,15 @@ class EnergyApiFactory
     {
         /** @var ApiInterface $instance */
         $instance = make($class);
+        $config = $this->configs[$instance->name()];
         $api = Api::updateOrCreate([
             'name' => $instance->name(),
+        ], [
             'url' => $instance->getBaseUrl(),
+            'api_key' => $instance->getApiKey(),
         ]);
         $instance->setModel($api);
-        $instance->init($this->configs[$instance->name()]);
+        $instance->init($config);
         return $instance;
     }
 
