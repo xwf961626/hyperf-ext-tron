@@ -48,7 +48,7 @@ class TronService
         Router::put('/admin/apis', [AdminController::class, 'editApi']);
 
         Router::addRoute(['GET', 'POST'], '/api/callback/{name}', function (string $name, RequestInterface $request, ResponseInterface $response) {
-            make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);
+            return make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);
         });
     }
 

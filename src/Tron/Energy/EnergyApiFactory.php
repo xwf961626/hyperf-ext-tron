@@ -21,6 +21,7 @@ class EnergyApiFactory
 {
     protected array $instances = [];
     protected array $configs = [];
+    private mixed $_classes = [];
 
     public function __construct(protected Cache $cache)
     {
@@ -28,7 +29,10 @@ class EnergyApiFactory
         $this->configs = $configs;
         foreach ($configs as $config) {
             $class = $config['class'];
-            $this->instances[$class] = $this->create($class);
+            $instance = $this->create($class);
+            $this->instances[$instance->name()] = $instance;
+            $this->_classes[$class] = $instance;
+            Logger::debug("创建API实例：$class");
         }
     }
 
@@ -54,6 +58,7 @@ class EnergyApiFactory
     {
         Logger::debug("API的callback处理：$name");
         if (!isset($this->instances[$name])) {
+            Logger::debug("API实例不存在: $name");
             return $response->json(['code' => 404]);
         }
         /**
@@ -75,12 +80,13 @@ class EnergyApiFactory
             else
                 return $response->json(['code' => 405]);
         } else {
+            Logger::debug("API未设置回调地址: $name");
             return $response->json(['code' => 404]);
         }
     }
 
-    public function get(string $name): ApiInterface
+    public function get(string $class): ApiInterface
     {
-        return $this->instances[$name];
+        return $this->_classes[$class];
     }
 }

@@ -18,6 +18,7 @@ class Trxx extends AbstractApi
     const API_NAME = 'trxx';
     protected string $baseUrl = 'https://trxx.io';
 
+
     public function init($configs)
     {
         parent::init($configs);
@@ -59,12 +60,12 @@ class Trxx extends AbstractApi
                 'energy_amount' => $power,
                 'period' => $time,
                 'receive_address' => $toAddress,
-                'out_trade_no' => Utils::makeOrderNo(),
+                'out_trade_no' => $orderLog->id,
             ];
             if ($callbackUrl = $this->callbackUrl()) {
                 $params['callback_url'] = $callbackUrl;
             }
-            $resp = $this->_post('/api/v1/frontend/order', $params);
+            $resp = $this->post('/api/v1/frontend/order', $params);
             if ($resp->getStatusCode() != 200) {
                 throw new \Exception($resp->getBody()->getContents());
             }
@@ -89,7 +90,8 @@ class Trxx extends AbstractApi
                     throw new Exception("查询失败");
                 }
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
+            Logger::error("TRXX 发送能量失败：{$e->getMessage()}");
             $orderLog->status = -1;
             $orderLog->fail_reason = $e->getMessage();
             $orderLog->save();
@@ -189,6 +191,11 @@ class Trxx extends AbstractApi
         return function ($result) use ($request): mixed {
             $timestamp = $request->getHeader('TIMESTAMP')[0] ?? null;
             $signature = $request->getHeader('SIGNATURE')[0] ?? null;
+            if (!$timestamp || !$signature) {
+                return $this->responseJson([
+                    'error' => 'TIMESTAMP or SIGNATURE not found'
+                ], 403);
+            }
             $body = $request->all();
             ksort($body);
             $json_data = json_encode($body, JSON_UNESCAPED_SLASHES);
@@ -197,7 +204,9 @@ class Trxx extends AbstractApi
             $expected_signature = hash_hmac('sha256', $message, $this->apiSecret);
 
             if (!hash_equals($signature, $expected_signature)) {
-                return "Signature is invalid.\n";
+                return $this->responseJson([
+                    'error' => 'Signature is invalid.'
+                ], 403);
             }
 
             Logger::debug("Trxx 订单结果回调处理：" . json_encode($result));
@@ -205,14 +214,34 @@ class Trxx extends AbstractApi
             $orderLog = EnergyLog::query()->where('id', $result['order_no'])->first();
             if (!$orderLog) {
                 Logger::error("订单{$result['order_no']}不存在");
-                return http_response_code(404);
+                return $this->responseJson([
+                    'error' => "订单{$result['order_no']}不存在"
+                ], 404);
             }
             [$continue, $hashes] = $this->handleOrderResult($result);
             if (!$continue && !empty($hashes)) {
                 $orderLog->tx_id = implode(',', $hashes);
                 $orderLog->save();
             }
-            return "ok";
+            return $this->responseJson([
+                'success' => true
+            ]);
         };
+    }
+
+    private function post(string $path, array $data)
+    {
+        $timestamp = time();
+        $json_data = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $message = $timestamp . '&' . $json_data;
+
+        $signature = hash_hmac('sha256', $message, $this->apiSecret);
+        $headers = [
+            "Content-Type: application/json",
+            "API-KEY: $this->apiKey",
+            "TIMESTAMP: $timestamp",
+            "SIGNATURE: $signature"
+        ];
+        return $this->_post($path, $data, $headers);
     }
 }

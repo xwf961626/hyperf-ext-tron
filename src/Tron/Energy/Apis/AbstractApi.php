@@ -5,6 +5,7 @@ namespace William\HyperfExtTron\Tron\Energy\Apis;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Hyperf\HttpServer\Contract\RequestInterface;
+use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
@@ -24,6 +25,18 @@ abstract class AbstractApi implements ApiInterface
     protected string $apiSecret = '';
 
     protected ?string $callbackUrl = null;
+
+    public function __construct(protected ResponseInterface $response)
+    {
+    }
+
+    public function responseJson($data, $code=200): \Psr\Http\Message\MessageInterface|\Psr\Http\Message\ResponseInterface
+    {
+        return $this->response
+            ->withStatus($code) // 设置状态码
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody(new \Hyperf\HttpMessage\Stream\SwooleStream(json_encode($data)));
+    }
 
     public function callbackUrl(): mixed
     {
@@ -64,6 +77,7 @@ abstract class AbstractApi implements ApiInterface
             $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
         }
         $orderLog->save();
+        return $orderLog;
     }
 
     public function getApiKey(): string
