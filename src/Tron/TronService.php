@@ -5,6 +5,7 @@ namespace William\HyperfExtTron\Tron;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
+use Hyperf\HttpServer\Contract\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
@@ -46,12 +47,9 @@ class TronService
         Router::get('/admin/apis', [AdminController::class, 'getApiList']);
         Router::put('/admin/apis', [AdminController::class, 'editApi']);
 
-
-    }
-
-    public static function registerCallbackUrls(): void
-    {
-        ApplicationContext::getContainer()->get(EnergyApiFactory::class)->registerCallbackRoutes();
+        Router::addRoute(['GET', 'POST'], '/api/callback/{name}', function (string $name, RequestInterface $request, ResponseInterface $response) {
+            make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);
+        });
     }
 
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface

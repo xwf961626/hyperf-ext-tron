@@ -43,7 +43,7 @@ return [
             'baseUrl' => env('TRXX_API', 'https://trxx.io'),
             'apiKey' => env('TRXX_API_KEY', ''),
             'apiSecret' => env('TRXX_API_SECRET', ''),
-            'callbackUrl' => env('TRXX_CALLBACK_URL', ''),
+            'callback_url' => env('TRXX_CALLBACK_URL', ''),
         ],
     ],
 ];

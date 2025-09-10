@@ -5,6 +5,7 @@ namespace William\HyperfExtTron\Tron\Energy;
 
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
+use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Tron\Energy\Apis\ApiInterface;
@@ -45,27 +46,32 @@ class EnergyApiFactory
         return $instance;
     }
 
-    public function registerCallbackRoutes(): void
+    public function handleApiCallback(string $name, RequestInterface $request, ResponseInterface $response): mixed
     {
-        Logger::debug("注册API的callback url路由");
+        Logger::debug("API的callback处理：$name");
+        if (!isset($this->instances[$name])) {
+            return $response->json(['code' => 404]);
+        }
         /**
          * @var  $name
          * @var ApiInterface $instance
          */
-        foreach ($this->instances as $name => $instance) {
-            if ($route = $instance->callbackUrl()) {
-                // 如果是完整 URL，取 path；如果本来就是 path，就直接用
-                $path = parse_url($route, PHP_URL_PATH) ?: $route;
+        $instance = $this->instances[$name];
+        if ($route = $instance->callbackUrl()) {
+            // 如果是完整 URL，取 path；如果本来就是 path，就直接用
+            $path = parse_url($route, PHP_URL_PATH) ?: $route;
 
-                // 确保以 / 开头，避免漏掉
-                if ($path[0] !== '/') {
-                    $path = '/' . $path;
-                }
-                Logger::debug("注册API#{$name}回调地址：$route => $path");
-                Router::post($path, function (RequestInterface $request) use ($instance) {
-                    return $instance->getCallbackHandler($request);
-                });
+            // 确保以 / 开头，避免漏掉
+            if ($path[0] !== '/') {
+                $path = '/' . $path;
             }
+            Logger::debug("注册API#{$name}回调地址：$route => $path");
+            if ($handler = $instance->getCallbackHandler($request))
+                return $handler($request);
+            else
+                return $response->json(['code' => 405]);
+        } else {
+            return $response->json(['code' => 404]);
         }
     }
 
