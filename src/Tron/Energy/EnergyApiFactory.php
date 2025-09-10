@@ -3,6 +3,7 @@
 namespace William\HyperfExtTron\Tron\Energy;
 
 
+use Hyperf\Cache\Cache;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
 use Hyperf\HttpServer\Contract\ResponseInterface;
@@ -12,6 +13,7 @@ use William\HyperfExtTron\Tron\Energy\Apis\ApiInterface;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Di\Annotation\AnnotationCollector;
+use William\HyperfExtTron\Tron\TronService;
 use function Hyperf\Config\config;
 use function Hyperf\Support\make;
 
@@ -20,7 +22,7 @@ class EnergyApiFactory
     protected array $instances = [];
     protected array $configs = [];
 
-    public function __construct()
+    public function __construct(protected Cache $cache)
     {
         $configs = config('tron.apis');
         $this->configs = $configs;
@@ -35,12 +37,14 @@ class EnergyApiFactory
         /** @var ApiInterface $instance */
         $instance = make($class);
         $config = $this->configs[$instance->name()];
-        $api = Api::updateOrCreate([
-            'name' => $instance->name(),
-        ], [
-            'url' => $instance->getBaseUrl(),
-            'api_key' => $instance->getApiKey(),
-        ]);
+        if (!$api = Api::where('name', $instance->name())->first()) {
+            $api = Api::create([
+                'name' => $instance->name(),
+                'url' => $instance->getBaseUrl(),
+                'api_key' => $instance->getApiKey(),
+            ]);
+            $this->cache->delete(TronService::API_LIST_CACHE_KEY);
+        }
         $instance->setModel($api);
         $instance->init($config);
         return $instance;
