@@ -82,6 +82,18 @@ class TronApi
         return true;
     }
 
+    /**
+     * 代理资源
+     * @param string $ownerAddress 发起地址
+     * @param string $resource 资源类型 ENERGY-能量 BANDWIDTH-带宽
+     * @param string $receiverAddress 接收地址
+     * @param int $balance 代理金额
+     * @param int $permissionId 授权ID
+     * @param bool $lock 是否锁定
+     * @param int $lockPeriod 锁定时间
+     * @return string 哈希
+     * @throws GuzzleException
+     */
     public function delegateResource(string $ownerAddress,
                                      string $resource,
                                      string $receiverAddress,
@@ -111,7 +123,17 @@ class TronApi
         }
     }
 
-    public function unDelegateResource($ownerAddress, $resource, $receiverAddress, $balance, $permissionId): string
+    /**
+     * 回收资源
+     * @param string $ownerAddress 发起地址
+     * @param string $resource 资源类型 ENERGY-能量 BANDWIDTH-带宽
+     * @param string $receiverAddress 接收地址
+     * @param float $balance 回收金额
+     * @param int $permissionId 授权ID
+     * @return string 哈希
+     * @throws GuzzleException
+     */
+    public function unDelegateResource(string $ownerAddress, string $resource, string $receiverAddress, float $balance, int $permissionId): string
     {
         $params = [
             'owner_address' => $ownerAddress,
@@ -132,6 +154,12 @@ class TronApi
         }
     }
 
+    /**
+     * 广播交易
+     * @param array $tx 交易
+     * @return string 交易哈希
+     * @throws GuzzleException
+     */
     public function broadcastTransaction($tx): string
     {
         $tx['signature'] = [$this->sign($tx['txID'], $this->privateKey)];
@@ -148,6 +176,12 @@ class TronApi
         }
     }
 
+    /**
+     * 交易本地签名
+     * @param string $txID
+     * @param string $privateKeyHex
+     * @return string
+     */
     public function sign(string $txID, string $privateKeyHex): string
     {
         $secp256k1 = new Secp256k1();
@@ -159,6 +193,11 @@ class TronApi
         return $serializer->serialize($signature) . str_pad(dechex($v), 2, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * 验证地址格式是否正确
+     * @param string $address
+     * @return bool
+     */
     public function isAddress(string $address): bool
     {
         // Base58 地址长度一般在 34~36
@@ -182,6 +221,61 @@ class TronApi
     }
 
     /**
+     * 是否已激活
+     * @param string $address
+     * @return bool
+     */
+    public function isActive(string $address): bool
+    {
+        try {
+            $accounts = $this->getAccounts($address);
+            return !empty($accounts['data']);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * 获取地址账号信息
+     * @param string $address
+     * @return array
+     */
+    public function getAccounts(string $address): array
+    {
+        $resp = $this->wallet->get('/v1/accounts/' . $address);
+        if ($resp->getStatusCode() !== 200) {
+            throw new \RuntimeException('TronApi#getAccounts failed: ' . $resp->getBody()->getContents());
+        }
+        $accounts = $resp->getBody()->getContents();
+        return json_decode($accounts, true);
+    }
+
+    /**
+     * 获取授权ID
+     * @param string $address
+     * @param string $operationAddress
+     * @return int
+     */
+    public function getPermissionId(string $address, string $operationAddress): int
+    {
+        $accounts = $this->getAccounts($address);
+        if (!empty($accounts['active_permission'])) {
+            foreach ($accounts['active_permission'] as $activePermission) {
+                $keys = $activePermission['keys'] ?? [];
+                foreach ($keys as $key) {
+                    if ($key['address'] === $operationAddress) {
+                        return $activePermission['id'];
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * 查询地址资源
+     * @param string $address
+     * @return AccountResource
      * @throws GuzzleException
      */
     public function getAccountResources(string $address): AccountResource
@@ -199,7 +293,15 @@ class TronApi
     }
 
     /**
-     * @throws GuzzleException
+     * 查询指定资源的 TRX 价格。
+     *
+     * @param string $resource 资源类型，可选值：
+     *     - ENERGY    能量
+     *     - BANDWIDTH 带宽
+     *
+     * @return float 返回对应资源的 TRX 价格
+     *
+     * @throws GuzzleException 当请求失败时抛出
      */
     public function getResourcePrice(string $resource): float
     {
