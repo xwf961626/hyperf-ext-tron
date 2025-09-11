@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\GuzzleClient;
+use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Tron\Energy\Utils;
@@ -30,7 +31,7 @@ abstract class AbstractApi implements ApiInterface
     {
     }
 
-    public function responseJson($data, $code=200): \Psr\Http\Message\MessageInterface|\Psr\Http\Message\ResponseInterface
+    public function responseJson($data, $code = 200): \Psr\Http\Message\MessageInterface|\Psr\Http\Message\ResponseInterface
     {
         return $this->response
             ->withStatus($code) // 设置状态码
@@ -92,8 +93,8 @@ abstract class AbstractApi implements ApiInterface
 
     public function init($configs)
     {
-        $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
-        $this->apiSecret = $this->model->api_secret ?? $configs['apiSecret'];
+        $this->apiKey = $this->model->api_key ?: $configs['apiKey']??"";
+        $this->apiSecret = $this->model->api_secret ?: $configs['apiSecret']??"";
         $this->baseUrl = $configs['baseUrl'];
     }
 

@@ -232,15 +232,15 @@ class Trxx extends AbstractApi
     private function post(string $path, array $data)
     {
         $timestamp = time();
+        ksort($data);
         $json_data = json_encode($data, JSON_UNESCAPED_SLASHES);
         $message = $timestamp . '&' . $json_data;
-
         $signature = hash_hmac('sha256', $message, $this->apiSecret);
         $headers = [
-            "Content-Type: application/json",
-            "API-KEY: $this->apiKey",
-            "TIMESTAMP: $timestamp",
-            "SIGNATURE: $signature"
+            "Content-Type" => " application/json",
+            "API-KEY" => $this->apiKey,
+            "TIMESTAMP" => $timestamp,
+            "SIGNATURE" => $signature
         ];
         return $this->_post($path, $data, $headers);
     }
