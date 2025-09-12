@@ -4,7 +4,7 @@ use William\HyperfExtTron\Apis\CatFee;
 use William\HyperfExtTron\Apis\Trongas;
 use William\HyperfExtTron\Apis\Trxx;
 use William\HyperfExtTron\Apis\Weidubot;
-
+use function Hyperf\Support\env;
 return [
     'private_key' => env('TRON_PRIVATE_KEY', ''),
     'monitor' => [

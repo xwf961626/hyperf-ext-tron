@@ -2,8 +2,6 @@
 
 namespace William\HyperfExtTron\Apis;
 
-use Carbon\Carbon;
-use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Model\UserResourceAddress;
@@ -126,11 +124,6 @@ class EnergyPool extends AbstractApi
             Logger::debug('EnergyApi#EnergyPool 查询可用资源异常:' . $e->getMessage());
             throw new \Exception("查询可用资源异常：" . $e->getMessage());
         }
-    }
-
-    public function getEnergyLogClass(): string
-    {
-        return EnergyLog::class;
     }
 
     public function name(): string

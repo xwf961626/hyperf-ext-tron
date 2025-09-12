@@ -2,6 +2,7 @@
 
 namespace William\HyperfExtTron;
 
+use William\HyperfExtTron\Command\TronCommand;
 use William\HyperfExtTron\Monitor\DefaultMonitorAdapter;
 use William\HyperfExtTron\Monitor\MonitorAdapterInterface;
 
@@ -14,6 +15,7 @@ class ConfigProvider
                 MonitorAdapterInterface::class => DefaultMonitorAdapter::class,
             ],
             'commands' => [
+                TronCommand::class,
             ],
             'listeners' => [
             ],

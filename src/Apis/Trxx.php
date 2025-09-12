@@ -2,17 +2,11 @@
 
 namespace William\HyperfExtTron\Apis;
 
-use Carbon\Carbon;
 use Exception;
-use GuzzleHttp\Exception\ClientException;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\Logger;
-use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
-use William\HyperfExtTron\Tron\Energy\Utils;
-use function Hyperf\Config\config;
 
 class Trxx extends AbstractApi
 {
@@ -183,8 +177,8 @@ class Trxx extends AbstractApi
             }
 
             Logger::debug("Trxx 订单结果回调处理：" . json_encode($result));
-            /** @var EnergyLog $orderLog */
-            $orderLog = EnergyLog::query()->where('id', $result['order_no'])->first();
+            /** @var ResourceDelegate $orderLog */
+            $orderLog = ResourceDelegate::query()->where('id', $result['order_no'])->first();
             if (!$orderLog) {
                 Logger::error("订单{$result['order_no']}不存在");
                 return $this->responseJson([

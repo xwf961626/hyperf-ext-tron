@@ -3,16 +3,13 @@
 namespace William\HyperfExtTron\Tron\Energy\Apis;
 
 use Carbon\Carbon;
-use GuzzleHttp\Client;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
-use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Utils;
-use function Hyperf\Config\config;
 
 /**
  * @property Api $model
@@ -103,21 +100,14 @@ abstract class AbstractApi implements ApiInterface
         ]);
     }
 
-    protected function createOrder($power, $time, $toAddress, $userId, $lockDuration): EnergyLog
+    protected function _get($path, $params = [], $headers = [])
     {
-        $orderLog = new EnergyLog();
-        $orderLog->id = Utils::makeOrderNo();
-        $orderLog->power_count = $power;
-        $orderLog->time = $time;
-        $orderLog->address = $toAddress;
-        $orderLog->user_id = $userId;
-        $orderLog->energy_policy = $this->name();
-        $orderLog->lock_duration = $lockDuration;
-        if ($lockDuration > 0) {
-            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
-        }
-        $orderLog->save();
-        return $orderLog;
+        $client = GuzzleClient::coroutineClient(['base_uri' => $this->getBaseUrl()]);
+        return $client->get($path, [
+            'query' => $params,
+            'headers' => $headers,
+            'http_errors' => false
+        ]);
     }
 
     public function getApiKey(): string

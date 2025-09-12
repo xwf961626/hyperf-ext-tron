@@ -2,9 +2,7 @@
 
 namespace William\HyperfExtTron\Tron\Energy\Apis;
 
-use GuzzleHttp\Exception\GuzzleException;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Model\ResourceDelegate;
 
 interface ApiInterface

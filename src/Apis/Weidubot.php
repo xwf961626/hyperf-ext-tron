@@ -2,15 +2,11 @@
 
 namespace William\HyperfExtTron\Apis;
 
-use Carbon\Carbon;
 use William\HyperfExtTron\Helper\Logger;
-use William\HyperfExtTron\Model\Api;
-use William\HyperfExtTron\Model\EnergyLog;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use William\HyperfExtTron\Tron\Energy\Model\WeiduEnergyLog;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
 #[EnergyApi(name: 'weidu')]
@@ -163,7 +159,7 @@ class Weidubot extends AbstractApi
 
     public function getBalance(): float
     {
-        $response = $this->client->get('/api/v2/user_info', ['headers' => $this->getHeaders(), 'http_errors' => false]);
+        $response = $this->_get('/api/v2/user_info', [], $this->getHeaders());
         $contents = $response->getBody()->getContents();
         if ($response->getStatusCode() !== 200) {
             Logger::debug('接口请求错误：' . $contents);
