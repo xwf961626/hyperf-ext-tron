@@ -7,6 +7,7 @@ use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Router\Router;
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
+use William\HyperfExtTron\Controller\UserResourceAddressController;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Tron\Energy\EnergyApiFactory;
@@ -42,10 +43,15 @@ class TronService
 
     public static function registerAdminRoutes(): void
     {
-        Router::get('/admin/tron_api_keys', [AdminController::class, 'getTronApiKeyList']);
-        Router::post('/admin/tron_api_keys', [AdminController::class, 'addApiKey']);
-        Router::get('/admin/apis', [AdminController::class, 'getApiList']);
-        Router::put('/admin/apis', [AdminController::class, 'editApi']);
+        Router::get('/admin/tron_api_keys', [ApiController::class, 'getTronApiKeyList']);
+        Router::post('/admin/tron_api_keys', [ApiController::class, 'addApiKey']);
+        Router::get('/admin/apis', [ApiController::class, 'getApiList']);
+        Router::put('/admin/apis', [ApiController::class, 'editApi']);
+
+        // 能量地址池管理
+        Router::post('/admin/energy/address', [UserResourceAddressController::class, 'getAddress']);
+        Router::post('/admin/energy/add', [UserResourceAddressController::class, 'addAddress']);
+        Router::post('/admin/energy/open', [UserResourceAddressController::class, 'switchOpen']);
 
         Router::addRoute(['GET', 'POST'], '/api/callback/{name}', function (string $name, RequestInterface $request, ResponseInterface $response) {
             return make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);

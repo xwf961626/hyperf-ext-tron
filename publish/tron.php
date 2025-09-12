@@ -8,6 +8,7 @@ use William\HyperfExtTron\Limit\DefaultHandler;
 use William\HyperfExtTron\Limit\DefaultRule;
 use William\HyperfExtTron\Limit\LimitCheck;
 use William\HyperfExtTron\Model\LimitResourceAddress;
+use William\HyperfExtTron\Model\UserResourceAddress;
 use function Hyperf\Support\env;
 
 return [
