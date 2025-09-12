@@ -37,12 +37,34 @@ class UserResourceAddress extends Model
     /**
      * The table associated with the model.
      */
-    protected ?string $table = 'user_resource_addreses';
+    protected ?string $table = 'user_resource_addresses';
 
     /**
      * The attributes that are mass assignable.
      */
-    protected array $fillable = [];
+    protected array $fillable = [
+        'name',
+        'address',
+        'mode',
+        'type',
+        'weight',
+        'approve_status',
+        'status',
+        'balance',
+        'energy_limit',
+        'energy',
+        'max_delegate_energy',
+        'bandwidth_limit',
+        'bandwidth',
+        'max_delegate_bandwidth',
+        'free_bandwidth',
+        'power_limit',
+        'power',
+        'permission',
+        'config',
+        'last_delegate_at',
+        'sort_num',
+    ];
 
     /**
      * The attributes that should be cast to native types.
