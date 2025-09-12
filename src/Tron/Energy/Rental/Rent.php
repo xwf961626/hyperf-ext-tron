@@ -89,7 +89,7 @@ class Rent extends AbstractRentalService
                 } else if ($time == 3) {
                     $time = '3day';
                 }
-                $energyLog = $this->api->send(
+                $energyLog = $this->api->delegate(
                     $order->user_address,
                     $order->energy_num,
                     $time,

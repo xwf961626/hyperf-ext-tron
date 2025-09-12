@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\EnergyLog;
+use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 
@@ -27,43 +28,19 @@ class Trongas extends AbstractApi
         $this->username = $this->model->api_secret ?? $configs['username'];
     }
 
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
+    public function delegateHandler(ResourceDelegate $delegate): string
     {
         $params = [
             'apiKey' => $this->apiKey,
             'resType' => 'ENERGY',
-            'payNums' => $power,
-            'rentTime' => intval($time), // 最大委托笔数，当为购买笔数时作为购买笔数的数量
-            'receiveAddress' => $toAddress,
+            'payNums' => $delegate->quantity,
+            'rentTime' => $delegate->time, // 单位小时，只能1时或1到30天按天租用其中不能租用2天
+            'receiveAddress' => $delegate->address,
             'resLock' => 0,
         ];
-        $orderLog = new EnergyLog();
-        $orderLog->power_count = $power;
-        $orderLog->time = $time;
-        $orderLog->address = $toAddress;
-        $orderLog->user_id = $userId;
-        $orderLog->energy_policy = $this->name();
-//        $orderLog->lock_duration = $lockDuration;
-//        if ($lockDuration > 0) {
-//            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
-//        }
-        $orderLog->save();
-
         Logger::debug('参数：' . json_encode($params));
-        try {
-            $data = $this->post('/api/pay', $params);
-            $orderLog->response_text = json_encode($data);
-            $orderLog->tx_id = $data['delegate_hash'][0];
-            $orderLog->from_address = $data['sendAddressList'][0];
-            $orderLog->status = 1;
-            $orderLog->save();
-        } catch (\Exception $e) {
-            $orderLog->status = -1;
-            $orderLog->fail_reason = $e->getMessage();
-            $orderLog->save();
-        }
-
-        return $orderLog;
+        $data = $this->post('/api/pay', $params);
+        return implode(',', $data['delegate_hash']);
     }
 
     private function post($url, array $params = [])
@@ -101,5 +78,10 @@ class Trongas extends AbstractApi
             error_log($e->getMessage() . $e->getTraceAsString());
             return 0;
         }
+    }
+
+    function parseTime(mixed $time)
+    {
+        // TODO: Implement parseTime() method.
     }
 }

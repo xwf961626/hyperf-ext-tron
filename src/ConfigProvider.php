@@ -2,8 +2,8 @@
 
 namespace William\HyperfExtTron;
 
+use William\HyperfExtTron\Monitor\DefaultMonitorAdapter;
 use William\HyperfExtTron\Monitor\MonitorAdapterInterface;
-use William\HyperfExtTron\Service\MonitorService;
 
 class ConfigProvider
 {
@@ -11,8 +11,7 @@ class ConfigProvider
     {
         return [
             'dependencies' => [
-                MonitorAdapterInterface::class => MonitorService::class,
-                \Psr\SimpleCache\CacheInterface::class => \Hyperf\Cache\Cache::class,
+                MonitorAdapterInterface::class => DefaultMonitorAdapter::class,
             ],
             'commands' => [
             ],

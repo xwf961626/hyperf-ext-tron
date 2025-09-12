@@ -12,8 +12,9 @@ declare(strict_types=1);
 
 namespace William\HyperfExtTron\Monitor;
 
+use Hyperf\Cache\Cache;
 use Psr\Container\ContainerInterface;
-use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 use William\HyperfExtTron\Constant\TronConstant;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Tron\Transaction;
@@ -24,6 +25,7 @@ use RedisException;
 use StephenHill\Base58;
 use Swoole\Coroutine\Channel;
 use Throwable;
+use function Hyperf\Config\config;
 
 class TronMonitorProcess extends AbstractProcess
 {
@@ -32,7 +34,7 @@ class TronMonitorProcess extends AbstractProcess
     protected Redis $redis;
     protected MonitorAdapterInterface $monitorAdapter;
 
-    public function __construct(ContainerInterface $container, private CacheInterface $cache)
+    public function __construct(ContainerInterface $container, private Cache $cache)
     {
         parent::__construct($container);
         $this->scanner = $container->get(TronApi::class);
@@ -48,6 +50,9 @@ class TronMonitorProcess extends AbstractProcess
 
         $maxConcurrent = 10; // 最多并发10个协程
         $chan = new Channel($maxConcurrent);
+
+        $startBlock = $this->getStartBlock();
+        $this->cache->set(TronConstant::CACHE_SCAN_CURRENT_BLOCK, $startBlock);
 
         while (true) {
             Logger::debug('扫块...');
@@ -177,5 +182,29 @@ class TronMonitorProcess extends AbstractProcess
         $block = $this->cache->get(TronConstant::CACHE_SCAN_CURRENT_BLOCK) ?? $this->scanner->getLatestBlockNumber();
         if ($block) return (int)$block;
         return $this->scanner->getLatestBlockNumber();
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function getStartBlock(): int
+    {
+        Logger::debug("TronMonitorProcess::handle 获取开始块");
+        $startBlockMode = config('tron.monitor.start_block_mode');
+        Logger::debug("TronMonitorProcess::handle startBlockMode:{$startBlockMode}");
+        if (is_int($startBlockMode)) {
+            return $startBlockMode;
+        }
+        if ($startBlockMode === 'cache') {
+            $cache = (int)$this->cache->get(TronConstant::CACHE_SCAN_CURRENT_BLOCK);
+            if ($cache === 0) {
+                return $this->scanner->getLatestBlockNumber();
+            }
+            return $cache;
+        }
+        if ($startBlockMode === 'latest') {
+            return $this->scanner->getLatestBlockNumber();
+        }
+        throw new \Exception('未找到开始块');
     }
 }

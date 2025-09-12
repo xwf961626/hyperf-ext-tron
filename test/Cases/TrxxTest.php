@@ -17,6 +17,6 @@ class TrxxTest extends TestCase
         $api = $factory->get(Trxx::class);
         $name = $api->name();
         $this->assertEquals(Trxx::API_NAME, $name);
-        $api->send('THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix', 65000, '1h', 1);
+        $api->delegate('THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix', 65000, '1h', 1);
     }
 }

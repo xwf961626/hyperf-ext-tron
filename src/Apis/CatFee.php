@@ -7,6 +7,7 @@ use Exception;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
+use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 use function Hyperf\Config\config;
@@ -16,6 +17,7 @@ class CatFee extends AbstractApi
 {
     const API_NAME = 'cateFee';
     protected string $baseUrl = 'https://api.catfee.io';
+    private mixed $delegateResponseData;
 
 
     public function init($configs)
@@ -54,12 +56,9 @@ class CatFee extends AbstractApi
         return base64_encode(hash_hmac('sha256', $signString, $this->apiSecret, true));
     }
 
-
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
+    public function parseTime(mixed $time): array
     {
-        $powerCount = $power;
         $lockDuration = 0;
-        Logger::debug("EnergyApi#EnergyPool 代理资源参数：$toAddress => power = $powerCount, time=$time, user_id= $userId");
         if (str_contains($time, 'min')) {
             $lockDuration = intval($time);
         }
@@ -76,57 +75,38 @@ class CatFee extends AbstractApi
             $time = $time . 'day';
             $lockDuration = (int)$time * 60 * 24;
         }
+        return [$time, $lockDuration];
+    }
 
-        $orderLog = new EnergyLog();
-        $orderLog->power_count = $power;
-        $orderLog->time = $time;
-        $orderLog->address = $toAddress;
-        $orderLog->user_id = $userId;
-        $orderLog->energy_policy = $this->name();
-        $orderLog->lock_duration = $lockDuration;
-        if ($lockDuration > 0) {
-            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
-        }
-        $orderLog->save();
+    public function delegateHandler(ResourceDelegate $delegate): string
+    {
+        Logger::debug("EnergyApi#CatFee 代理资源参数：" . json_encode($delegate));
 
         $path = "/v1/order";
 
         // 示例：创建订单
         $queryParams = [
-            "quantity" => $power,
-            "receiver" => $toAddress,
-            "duration" => $time,
+            "quantity" => $delegate->quantity,
+            "receiver" => $delegate->address,
+            "duration" => $delegate->time,
         ];
 
-        // 发送请求
-        try {
-            $response = $this->post($path, $queryParams);
-            // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
-            //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
-            //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
-            //"confirm_status":"UNCONFIRMED","balance":84595000}}
-            Logger::debug("CatFee /v1/order Response Code: 200");
-            Logger::debug("CatFee /v1/order Response Body: $response");
-            $result = json_decode($response, true);
-            if ($result['code'] === 0) {
-                $data = $result['data'];
-                $orderLog->response_text = $response;
-                $orderLog->tx_id = $data['delegate_hash'];
-                $orderLog->status = 1;
-                $orderLog->save();
 
-                $this->model->balance = round($data['balance'] / 1_000_000, 6);
-                $this->model->save();
-            } else {
-                throw new Exception("CatFee /v1/order fail: $response");
-            }
-        } catch (Exception $e) {
-            Logger::error("CatFee /v1/order Error: " . $e->getMessage());
-            $orderLog->fail_reason = $e->getMessage();
-            $orderLog->status = -1;
-            $orderLog->save();
+        $response = $this->post($path, $queryParams);
+        // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
+        //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
+        //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
+        //"confirm_status":"UNCONFIRMED","balance":84595000}}
+        Logger::debug("CatFee /v1/order Response Code: 200");
+        Logger::debug("CatFee /v1/order Response Body: $response");
+        $result = json_decode($response, true);
+        if ($result['code'] === 0) {
+            $data = $result['data'];
+            $this->delegateResponseData = $data;
+            return $data['delegate_hash'];
+        } else {
+            throw new Exception("CatFee /v1/order fail: $response");
         }
-        return $orderLog;
     }
 
     // 创建 HTTP 请求
@@ -240,5 +220,11 @@ class CatFee extends AbstractApi
             Logger::error("CatFee /v1/account fail: " . $e->getMessage());
             return 0;
         }
+    }
+
+    protected function afterDelegateSuccess(): void
+    {
+        $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 6);
+        $this->model->save();
     }
 }

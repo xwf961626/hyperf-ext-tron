@@ -4,7 +4,8 @@
   "type": "library",
   "require": {
     "php": ">=8.3",
-    "ext-curl": "*"
+    "ext-curl": "*",
+    "ext-redis": "*"
   },
   "require-dev": {
     "hyperf/cache": "~3.1.0",
@@ -30,6 +31,7 @@
     "hyperf/devtool": "~3.1.0",
     "hyperf/testing": "~3.1.0",
     "mockery/mockery": "^1.0",
+    "hyperf/redis": "^3.1",
     "swoole/ide-helper": "^5.0"
   },
   "autoload": {

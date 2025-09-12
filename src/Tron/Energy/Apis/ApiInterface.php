@@ -5,6 +5,7 @@ namespace William\HyperfExtTron\Tron\Energy\Apis;
 use GuzzleHttp\Exception\GuzzleException;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use William\HyperfExtTron\Model\EnergyLog;
+use William\HyperfExtTron\Model\ResourceDelegate;
 
 interface ApiInterface
 {
@@ -13,15 +14,15 @@ interface ApiInterface
     public function validate($params);
 
     /**
-     * 购买能量
+     * 代理资源
      *
      * @param string $toAddress
      * @param int $power
      * @param mixed $time
      * @param int $userId
-     * @throws GuzzleException
+     * @return ResourceDelegate
      */
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog;
+    public function delegate(string $toAddress, int $power, mixed $time, int $userId = 0): ResourceDelegate;
 
     public function recycle(string $toAddress): mixed;
 

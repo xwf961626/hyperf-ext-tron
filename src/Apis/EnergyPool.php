@@ -31,12 +31,9 @@ class EnergyPool extends AbstractApi
         // TODO: Implement validate() method.
     }
 
-
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
+    public function parseTime(mixed $time): array
     {
-        $powerCount = $power;
         $lockDuration = 0;
-        Logger::debug("EnergyApi#EnergyPool 代理资源参数：$toAddress => power = $powerCount, time=$time, user_id= $userId");
         if (str_contains($time, 'min')) {
             $lockDuration = intval($time);
         }
@@ -53,57 +50,34 @@ class EnergyPool extends AbstractApi
             $time = $time . 'day';
             $lockDuration = (int)$time * 60 * 24;
         }
+        return [$time, $lockDuration];
+    }
 
-        $resourceAddress = $this->getUserResourceAddress($powerCount);
+    public function delegateHandler(ResourceDelegate $delegate): string
+    {
+        Logger::debug("EnergyApi#EnergyPool 代理资源参数：" . json_encode($delegate));
+
+        $resourceAddress = $this->getUserResourceAddress($delegate->quantity);
 
         if (!$resourceAddress) {
             throw new \Exception('未找到合适的能量池地址');
         }
         Logger::debug('EnergyApi#EnergyPool 使用地址：' . json_encode($resourceAddress));
 
-        $orderLog = new EnergyLog();
-        $orderLog->power_count = $power;
-        $orderLog->time = $time;
-        $orderLog->address = $toAddress;
-        $orderLog->user_id = $userId;
-        $orderLog->energy_policy = $this->name();
-        $orderLog->from_address = $resourceAddress->address;
-        $orderLog->lock_duration = $lockDuration;
-        if ($lockDuration > 0) {
-            $orderLog->expired_dt = Carbon::now()->addMinutes($lockDuration);
-        }
-
         $price = $this->tron->getResourcePrice(self::SOURCE_ENERGY);
         Logger::debug('EnergyApi#EnergyPool 查询能量价格：' . $price);
-        $amount = intval($powerCount * $price);
+        $amount = intval($delegate->quantity * $price);
         Logger::debug('EnergyApi#EnergyPool 查询能量总金额：' . $amount);
-        try {
-            if (!$txid = $this->tron->delegateResource($resourceAddress,
-                $toAddress,
-                self::SOURCE_ENERGY,
-                $amount,
-                0)) {
-                Logger::error("EnergyApi#EnergyPool 发送能量异常失败");
-                throw new \Exception('代理资源失败');
-            }
-            Logger::debug('EnergyApi#EnergyPool 发送成功：' . $txid);
-            $orderLog->tx_id = $txid;
-            $orderLog->status = 1;
-            $orderLog->save();
-        } catch (\Exception $e) {
-            Logger::debug('发送失败：' . $e->getMessage());
-            $orderLog->status = -1;
-            $orderLog->fail_reason = $e->getMessage();
-            $orderLog->save();
-            throw new \Exception($e->getMessage());
+        if (!$txid = $this->tron->delegateResource($resourceAddress,
+            $delegate->address,
+            self::SOURCE_ENERGY,
+            $amount,
+            0)) {
+            Logger::error("EnergyApi#EnergyPool 发送能量异常失败");
+            throw new \Exception('代理资源失败');
         }
-        try {
-//            $this->updateUserResourceAddress($resourceAddress);
-        } catch (\Exception $e) {
-            Logger::debug("更新地址资源失败" . $e->getMessage());
-        }
-
-        return $orderLog;
+        Logger::debug('EnergyApi#EnergyPool 发送成功：' . $txid);
+        return $txid;
     }
 
     public function recycle(string $toAddress): mixed
@@ -169,7 +143,7 @@ class EnergyPool extends AbstractApi
         return "";
     }
 
-    public function getBaseUrl():string
+    public function getBaseUrl(): string
     {
         return "";
     }

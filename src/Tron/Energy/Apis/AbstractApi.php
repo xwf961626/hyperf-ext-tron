@@ -10,6 +10,7 @@ use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\EnergyLog;
+use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Utils;
 use function Hyperf\Config\config;
 
@@ -29,6 +30,44 @@ abstract class AbstractApi implements ApiInterface
 
     public function __construct(protected ResponseInterface $response)
     {
+    }
+
+    public function delegate(string $toAddress, int $power, mixed $time, int $userId = 0, string $resource = 'ENERGY'): ResourceDelegate
+    {
+        if (!$power || !$time) {
+            Logger::error('参数错误: power, time');
+            throw new \Exception('能量数、时长未定义');
+        }
+
+        [$time, $lockDuration] = $this->parseTime($time);
+        $delegate = new ResourceDelegate();
+        $delegate->quantity = $power;
+        $delegate->resource = $resource;
+        $delegate->time = $time;
+        $delegate->address = $toAddress;
+        $delegate->user_id = $userId;
+        $delegate->api = $this->name();
+        $delegate->lock_duration = $lockDuration;
+        if ($lockDuration > 0) {
+            $delegate->expired_dt = Carbon::now()->addMinutes($lockDuration);
+        }
+        $delegate->save();
+        try {
+
+            $hash = $this->delegateHandler($delegate);
+
+            $delegate->tx_id = $hash;
+            $delegate->status = 1;
+            $delegate->save();
+
+            $this->afterDelegateSuccess();
+        } catch (\Exception $e) {
+            Logger::error(get_class($this) . " delegate err: " . $e->getMessage());
+            $delegate->fail_reason = $e->getMessage();
+            $delegate->status = -1;
+            $delegate->save();
+        }
+        return $delegate;
     }
 
     public function responseJson($data, $code = 200): \Psr\Http\Message\MessageInterface|\Psr\Http\Message\ResponseInterface
@@ -93,9 +132,14 @@ abstract class AbstractApi implements ApiInterface
 
     public function init($configs)
     {
-        $this->apiKey = $this->model->api_key ?: $configs['apiKey']??"";
-        $this->apiSecret = $this->model->api_secret ?: $configs['apiSecret']??"";
+        $this->apiKey = $this->model->api_key ?: $configs['apiKey'] ?? "";
+        $this->apiSecret = $this->model->api_secret ?: $configs['apiSecret'] ?? "";
         $this->baseUrl = $configs['baseUrl'];
+    }
+
+    protected function afterDelegateSuccess(): void
+    {
+
     }
 
     public function validate($params)
@@ -118,4 +162,8 @@ abstract class AbstractApi implements ApiInterface
     {
         return 0;
     }
+
+    abstract function parseTime(mixed $time);
+
+    abstract function delegateHandler(ResourceDelegate $delegate): string;
 }

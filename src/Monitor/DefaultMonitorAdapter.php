@@ -1,16 +1,15 @@
 <?php
 
-namespace William\HyperfExtTron\Service;
+namespace William\HyperfExtTron\Monitor;
 
 use Hyperf\Contract\ConfigInterface;
 use Psr\Container\ContainerInterface;
 use William\HyperfExtTron\Constant\TronConstant;
 use William\HyperfExtTron\Helper\Logger;
-use William\HyperfExtTron\Monitor\MonitorAdapterInterface;
 use William\HyperfExtTron\Tron\Transaction;
 use William\HyperfExtTron\Tron\TronApi;
 
-class MonitorService implements MonitorAdapterInterface
+class DefaultMonitorAdapter implements MonitorAdapterInterface
 {
     protected mixed $config;
     protected array $addresses;

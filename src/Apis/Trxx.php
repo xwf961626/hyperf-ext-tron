@@ -9,6 +9,7 @@ use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\EnergyLog;
+use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 use William\HyperfExtTron\Tron\Energy\Utils;
 use function Hyperf\Config\config;
@@ -17,6 +18,7 @@ class Trxx extends AbstractApi
 {
     const API_NAME = 'trxx';
     protected string $baseUrl = 'https://trxx.io';
+    private $delegateResponseData;
 
 
     public function init($configs)
@@ -25,78 +27,49 @@ class Trxx extends AbstractApi
         $this->callbackUrl = $this->model->callback_url ?? $configs['callback_url'];
     }
 
-    /**
-     * @param string $toAddress
-     * @param int $power
-     * @param mixed $time
-     * @param int $userId
-     * @return EnergyLog
-     */
-    public function send(string $toAddress, int $power, mixed $time, int $userId = 0): EnergyLog
+
+    public function delegateHandler(ResourceDelegate $delegate): string
     {
-        $lockDuration = 0;
-        Logger::debug("EnergyApi#Trxx 代理资源参数：$toAddress => power = $power, time=$time, user_id= $userId");
-        if (str_contains($time, 'min')) {
-            $lockDuration = 60;
-            $time = '1H';
-        }
-
-        if (str_contains($time, 'day') || ctype_digit($time)) {
-            $lockDuration = intval($time) * 60 * 24;
-            $time = intval($time) . 'D';
-        }
-
-        if (str_contains($time, 'h')) {
-            $lockDuration = intval($time) * 60;
-            $time = intval($time) . 'H';
-        }
-
         //租赁周期,1H/1D/3D/30D
         //H表示1小时，D表示天
-        $orderLog = $this->createOrder($power, $time, $toAddress, $userId, $lockDuration);
 
-        try {
-            $params = [
-                'energy_amount' => $power,
-                'period' => $time,
-                'receive_address' => $toAddress,
-                'out_trade_no' => $orderLog->id,
-            ];
-            if ($callbackUrl = $this->callbackUrl()) {
-                $params['callback_url'] = $callbackUrl;
-            }
-            $resp = $this->post('/api/v1/frontend/order', $params);
-            if ($resp->getStatusCode() != 200) {
-                throw new \Exception($resp->getBody()->getContents());
-            }
-            $result = json_decode($resp->getBody()->getContents(), true);
-            if ($result['errno']) {
-                throw new \Exception($result['message']);
-            }
-            $orderLog->response_text = json_encode($result); // 内部订单号
-            $orderLog->save();
-            $this->model->balance = round($result['balance'] / 1_000_000, 6);
-            $this->model->save();
-
-            if (!$this->callbackUrl()) {
-                Logger::debug("未设置回调地址，主动查询订单结果");
-                $hashes = $this->orderQuery($result['serial']);
-                if (!empty($hashes)) {
-                    Logger::debug("主动查询订单结果成功：" . json_encode($hashes));
-                    $orderLog->tx_id = implode(',', $hashes);
-                    $orderLog->save();
-                } else {
-                    Logger::debug("主动查询订单结果失败");
-                    throw new Exception("查询失败");
-                }
-            }
-        } catch (\Exception $e) {
-            Logger::error("TRXX 发送能量失败：{$e->getMessage()}");
-            $orderLog->status = -1;
-            $orderLog->fail_reason = $e->getMessage();
-            $orderLog->save();
+        $params = [
+            'energy_amount' => $delegate->quantity,
+            'period' => $delegate->time,
+            'receive_address' => $delegate->address,
+            'out_trade_no' => $delegate->id,
+        ];
+        if ($callbackUrl = $this->callbackUrl()) {
+            $params['callback_url'] = $callbackUrl;
         }
-        return $orderLog;
+        $resp = $this->post('/api/v1/frontend/order', $params);
+        $this->delegateResponseData = $resp->getBody()->getContents();
+        if ($resp->getStatusCode() != 200) {
+            throw new \Exception($this->delegateResponseData);
+        }
+        $result = json_decode($this->delegateResponseData, true);
+        if ($result['errno']) {
+            throw new \Exception($result['message']);
+        }
+
+        if (!$this->callbackUrl()) {
+            Logger::debug("未设置回调地址，主动查询订单结果");
+            $hashes = $this->orderQuery($result['serial']);
+            if (!empty($hashes)) {
+                Logger::debug("主动查询订单结果成功：" . json_encode($hashes));
+                return implode(',', $hashes);
+            } else {
+                Logger::debug("主动查询订单结果失败");
+                throw new Exception("查询失败");
+            }
+        }
+        return "";
+    }
+
+    protected function afterDelegateSuccess(): void
+    {
+        $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 6);
+        $this->model->save();
     }
 
 
@@ -243,5 +216,25 @@ class Trxx extends AbstractApi
             "SIGNATURE" => $signature
         ];
         return $this->_post($path, $data, $headers);
+    }
+
+    function parseTime(mixed $time): array
+    {
+        $lockDuration = 0;
+        if (str_contains($time, 'min')) {
+            $lockDuration = 60;
+            $time = '1H';
+        }
+
+        if (str_contains($time, 'day') || ctype_digit($time)) {
+            $lockDuration = intval($time) * 60 * 24;
+            $time = intval($time) . 'D';
+        }
+
+        if (str_contains($time, 'h')) {
+            $lockDuration = intval($time) * 60;
+            $time = intval($time) . 'H';
+        }
+        return [$time, $lockDuration];
     }
 }
