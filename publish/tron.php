@@ -4,7 +4,12 @@ use William\HyperfExtTron\Apis\CatFee;
 use William\HyperfExtTron\Apis\Trongas;
 use William\HyperfExtTron\Apis\Trxx;
 use William\HyperfExtTron\Apis\Weidubot;
+use William\HyperfExtTron\Limit\DefaultHandler;
+use William\HyperfExtTron\Limit\DefaultRule;
+use William\HyperfExtTron\Limit\LimitCheck;
+use William\HyperfExtTron\Model\LimitResourceAddress;
 use function Hyperf\Support\env;
+
 return [
     'private_key' => env('TRON_PRIVATE_KEY', ''),
     'monitor' => [
@@ -14,6 +19,15 @@ return [
     'endpoint' => [
         'full_node' => env('TRON_FULL_NODE', 'https://api.trongrid.io'),
         'solidity_node' => env('TRON_FULL_NODE_SOLIDITY', 'https://api.trongrid.io'),
+    ],
+    /**
+     * 需要检测是否达到阈值的模型
+     */
+    'address_limit' => [
+        'enable' => true,
+        'check' => [
+            (new LimitCheck(LimitResourceAddress::class))->setCallback(new DefaultHandler())->setInterval(30)->setRule(new DefaultRule()),
+        ]
     ],
     // 自有能量池
     'pool' => [],

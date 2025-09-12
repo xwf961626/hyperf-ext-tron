@@ -3,6 +3,7 @@
 namespace William\HyperfExtTron\Tron;
 
 use GuzzleHttp\Exception\GuzzleException;
+use William\HyperfExtTron\Helper\Logger;
 use function Hyperf\Support\env;
 
 trait HttpTrait
@@ -47,7 +48,7 @@ trait HttpTrait
         // 顺序取 key
         $lastIndex = ($lastIndex + 1) % $count;
         $currentKey = trim($keys[$lastIndex]);
-
+        Logger::debug("'TRON-PRO-API-KEY' => $currentKey");
         return $this->client->get($uri, [
             'query' => $query,
             'headers' => [

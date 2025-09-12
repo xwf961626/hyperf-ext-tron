@@ -2,15 +2,17 @@
 
 namespace William\HyperfExtTron\Command;
 
+use Hyperf\Cache\Cache;
 use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use William\HyperfExtTron\Tron\TronApiKey;
+use William\HyperfExtTron\Tron\TronService;
 
 #[Command]
 class TronCommand extends HyperfCommand
 {
-    public function __construct()
+    public function __construct(protected Cache $cache)
     {
         parent::__construct('tron:add_api_key');
     }
@@ -35,6 +37,7 @@ class TronCommand extends HyperfCommand
             TronApiKey::create(['api_key' => $apiKey, 'type' => $type]);
             $this->output->writeln("<error>Add Api key '{$apiKey}' successfully.</error>");
         }
+        $this->cache->delete(TronService::API_KEY_CACHE_KEY);
         $this->output->writeln("<info>all successfully!</info>");
     }
 }
