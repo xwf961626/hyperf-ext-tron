@@ -229,7 +229,7 @@ class TronApi
     {
         try {
             $accounts = $this->getAccounts($address);
-            return !empty($accounts['data']);
+            return !empty($accounts);
         } catch (\Exception $e) {
             return false;
         }
@@ -242,7 +242,7 @@ class TronApi
      */
     public function getAccounts(string $address): array
     {
-        $resp = $this->wallet->get('/v1/accounts/' . $address, [], $this->service->getCacheApiKeys());
+        $resp = $this->wallet->get('/wallet/getaccount' , ['address'=>$address, 'visible'=>true], $this->service->getCacheApiKeys());
         if ($resp->getStatusCode() !== 200) {
             throw new \RuntimeException('TronApi#getAccounts failed: ' . $resp->getBody()->getContents());
         }
