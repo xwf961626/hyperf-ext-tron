@@ -52,10 +52,10 @@ class UserResourceAddressController extends BaseController
         return $this->success($resourceAddress);
     }
 
-    public function getAddress($request)
+    public function getAddress()
     {
-        $page_size = $request->input('page_size', 20);
-        $keyword = $request->input("keyword");
+        $page_size = $this->request->input('page_size', 20);
+        $keyword = $this->request->input("keyword");
         $builder = UserResourceAddress::query();
         if ($keyword) {
             $builder->where("name", 'like', '%' . $keyword . '%');
@@ -66,10 +66,10 @@ class UserResourceAddressController extends BaseController
     }
 
     // 修改能量地址
-    public function switchOpen($request)
+    public function switchOpen()
     {
-        $id = $request->input('id');
-        $isOpen = $request->input('open');
+        $id = $this->request->input('id');
+        $isOpen = $this->request->input('open');
         /** @var UserResourceAddress $resourceAddress */
         $resourceAddress = UserResourceAddress::query()->find($id);
         if (!$resourceAddress) {
