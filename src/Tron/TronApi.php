@@ -242,7 +242,7 @@ class TronApi
      */
     public function getAccounts(string $address): array
     {
-        $resp = $this->wallet->get('/v1/accounts/' . $address);
+        $resp = $this->wallet->get('/v1/accounts/' . $address, [], $this->service->getCacheApiKeys());
         if ($resp->getStatusCode() !== 200) {
             throw new \RuntimeException('TronApi#getAccounts failed: ' . $resp->getBody()->getContents());
         }
