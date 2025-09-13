@@ -113,6 +113,7 @@ class LimitAddressService
     public function updateResources(LimitResourceAddress $addr)
     {
         $stdResource = $this->tronApi->getAccountResources($addr->address);
+        Logger::debug("{$addr->address}|currentNet=$stdResource->currentNet|currentEnergy=$stdResource->currentEnergy");
         $addr->update([
             'total_quantity' => $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet,
             'current_quantity' => $addr->resource == 'ENERGY' ? $stdResource->currentEnergy : $stdResource->currentNet,

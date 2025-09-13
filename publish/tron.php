@@ -18,6 +18,8 @@ return [
         'addresses' => [],
     ],
     'endpoint' => [
+        'no_api_key' => env('TRON_NO_API_KEY', true),
+        'api_keys' => [],
         'full_node' => env('TRON_FULL_NODE', 'https://api.trongrid.io'),
         'solidity_node' => env('TRON_FULL_NODE_SOLIDITY', 'https://api.trongrid.io'),
     ],
