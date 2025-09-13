@@ -6,7 +6,6 @@ namespace William\HyperfExtTron\Controller;
 use Hyperf\Contract\ContainerInterface;
 use Hyperf\Database\Model\Model;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use William\HyperfExtTron\Model\LimitResourceAddress;
 use William\HyperfExtTron\Model\ResourceAddress;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Service\LimitAddressService;
@@ -60,7 +59,7 @@ class LimitAddressController extends BaseController
         $new->name = $remark;
         $new->max_times = $this->request->input('max_times', 0);
         $new->save();
-        $this->service->clearLimitList($this->model::class);
+        $this->service->clearLimitList($this->model);
         return $this->success();
     }
 
@@ -122,7 +121,7 @@ class LimitAddressController extends BaseController
             $addr->closeAddress();
         }
         $addrEntity->delete();
-        $this->service->clearLimitList(LimitResourceAddress::class);
+        $this->service->clearLimitList($this->model);
         return $this->success();
     }
 
