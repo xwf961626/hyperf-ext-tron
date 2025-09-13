@@ -52,10 +52,14 @@ class LimitCheckProcess extends AbstractProcess
                         continue;
                     }
                     foreach ($all as $item) {
-                        // 检查是否达到阈值
-                        $entity = new $model($item);
-                        if ($check->getRule()->check($entity)) {
-                            $check->getCallback()->handle($entity);
+                        try {
+                            // 检查是否达到阈值
+                            $entity = new $model($item);
+                            if ($check->getRule()->check($entity)) {
+                                $check->getCallback()->handle($entity);
+                            }
+                        } catch (\Exception $e) {
+                            Logger::error("检查地址".json_encode($item)."失败：{$e->getMessage()}");
                         }
                     }
                 } catch (\Throwable $e) {
