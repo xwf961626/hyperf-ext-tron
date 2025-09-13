@@ -96,7 +96,7 @@ class LimitAddressService
         try {
             $res = $this->tronApi->unDelegateResource($order->from_address, $order->resource, $order->address, $balance, $owner->permission);
             if ($res) {
-                $order->status = 1;
+                $order->undelegate_status = 1;
                 $order->undelegate_at = date('Y-m-d H:i:s');
                 $order->undelegate_hash = $res;
                 $order->save();
