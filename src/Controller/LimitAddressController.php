@@ -3,30 +3,31 @@
 namespace William\HyperfExtTron\Controller;
 
 
-use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\HttpServer\Contract\ResponseInterface;
-use Hyperf\Logger\LoggerFactory;
-use Phper666\JWTAuth\JWT;
+use Hyperf\Contract\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use William\HyperfExtTron\Event\LimitAddressClosed;
+use William\HyperfExtTron\Event\LimitAddressCreated;
 use William\HyperfExtTron\Model\LimitResourceAddress;
 use William\HyperfExtTron\Model\ResourceDelegate;
-use William\HyperfExtTron\Model\UserResourceAddress;
-use function Hyperf\Support\env;
+use William\HyperfExtTron\Service\LimitAddressService;
 
 class LimitAddressController extends BaseController
 {
-    public function __construct(JWT                                   $jwt,
-                                LoggerFactory                         $loggerFactory,
-                                RequestInterface                      $request,
-                                ResponseInterface                     $response,
-                                protected LimitResourceAddressService $service
-    )
+    public function __construct(ContainerInterface                 $container,
+                                protected EventDispatcherInterface $eventDispatcher,
+                                protected LimitAddressService      $service)
     {
-        parent::__construct($jwt, $loggerFactory, $request, $response);
+        parent::__construct($container);
     }
 
     public function addressList()
     {
-        $q = LimitResourceAddress::query()->where('resource', 'BANDWIDTH');
+        $q = LimitResourceAddress::query();
+        if ($type = $this->request->query('resource_type')) {
+            if(in_array($type, ['ENERGY', 'BANDWIDTH'])) {
+                $q = $q->where('resource', $type);
+            }
+        }
         if ($addr = trim($this->request->query('keyword'))) {
             $q = $q->where('address', $addr);
         }
@@ -39,21 +40,25 @@ class LimitAddressController extends BaseController
         if (!$address = $this->request->input('address', '')) {
             return $this->error('请输入地址');
         }
-        if (!$min_bandwidth = $this->request->input('min_bandwidth')) {
+        if(LimitResourceAddress::query()->where('address', $address)->exists()) {
+            return $this->error("该地址已存在");
+        }
+        if (!$min = $this->request->input('min')) {
             return $this->error('请输入最小带宽阈值');
         }
-        if (!$send_bandwidth = $this->request->input('send_bandwidth')) {
+        if (!$send = $this->request->input('send')) {
             return $this->error('请输入发送带宽的值');
         }
         $remark = $this->request->input('remark', '');
-        LimitResourceAddress::query()->create([
-            'address' => $address,
-            'min_bandwidth' => $min_bandwidth,
-            'send_bandwidth' => $send_bandwidth,
-            'status' => 0,
-            'remark' => $remark,
-            'max_times' => $this->request->input('max_times', 0)
-        ]);
+        $new = new LimitResourceAddress();
+        $new->address = $address;
+        $new->min_quantity = $min;
+        $new->send_quantity = $send;
+        $new->status = 1;
+        $new->name = $remark;
+        $new->max_times = $this->request->input('max_times', 0);
+        $new->save();
+        $this->eventDispatcher->dispatch(new LimitAddressCreated($new));
         return $this->success();
     }
 
@@ -67,11 +72,11 @@ class LimitAddressController extends BaseController
         if ($address = $this->request->input('address', '')) {
             $addr->address = $address;
         }
-        if ($min_bandwidth = $this->request->input('min_bandwidth')) {
-            $addr->min_quantity = $min_bandwidth;
+        if ($min = $this->request->input('min')) {
+            $addr->min_quantity = $min;
         }
-        if ($send_bandwidth = $this->request->input('send_bandwidth')) {
-            $addr->send_quantity = $send_bandwidth;
+        if ($send = $this->request->input('send')) {
+            $addr->send_quantity = $send;
         }
         if ($send_times = $this->request->input('send_times')) {
             $addr->send_times = $send_times;
@@ -91,9 +96,8 @@ class LimitAddressController extends BaseController
 
         try {
             if ($status === 0 && $oldStatus == 1) {
-                $this->service->recycle($addr);
-                $addr->send_times = 0;
-                $addr->save();
+                $this->service->closeAddress($addr);
+                $this->eventDispatcher->dispatch(new LimitAddressClosed($addr));
             }
         } catch (\Exception $e) {
             return $this->error('回收带宽失败：' . $e->getMessage());
@@ -106,6 +110,10 @@ class LimitAddressController extends BaseController
         $addr = LimitResourceAddress::query()->find($id);
         if (!$addr) {
             return $this->error('地址不存在');
+        }
+        if ($addr->status === 1) {
+            $this->service->closeAddress($addr);
+            $this->eventDispatcher->dispatch(new LimitAddressClosed($addr));
         }
         $addr->delete();
         return $this->success();
@@ -125,8 +133,7 @@ class LimitAddressController extends BaseController
     public function retryRecycle($id)
     {
         try {
-            $userAddress = UserResourceAddress::where('address', env('BANDWIDTH_ADDR'))->first();
-            $this->service->recycleRetry($id, $userAddress);
+            $this->service->recycleRetry($id);
             return $this->success();
         } catch (\Exception $e) {
             return $this->error('回收带宽失败：' . $e->getMessage());

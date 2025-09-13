@@ -37,11 +37,12 @@ class TronRouter
     
     public static function addLimitAddressRoutes(): void
     {
-        Router::get('bandwidth/addresses', [LimitAddressController::class, 'addressList']);
-        Router::post('bandwidth/addresses', [LimitAddressController::class, 'addAddress']);
-        Router::put('bandwidth/addresses/{id}', [LimitAddressController::class, 'editAddress']);
-        Router::delete('bandwidth/addresses/{id}', [LimitAddressController::class, 'deleteAddress']);
-        Router::get('bandwidth/logs', [LimitAddressController::class, 'getLogs']);
-        Router::put('bandwidth/logs/{id}/retry_recycle', [LimitAddressController::class, 'retryRecycle']);
+        Router::get('limit/addresses', [LimitAddressController::class, 'addressList']);
+        Router::post('limit/addresses', [LimitAddressController::class, 'addAddress']);
+        Router::put('limit/addresses/{id}', [LimitAddressController::class, 'editAddress']);
+        Router::delete('limit/addresses/{id}', [LimitAddressController::class, 'deleteAddress']);
+
+        Router::get('delegate/logs', [LimitAddressController::class, 'getLogs']);
+        Router::put('delegate/logs/{id}/retry_recycle', [LimitAddressController::class, 'retryRecycle']);
     }
 }
