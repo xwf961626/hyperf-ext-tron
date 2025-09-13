@@ -113,14 +113,15 @@ class LimitAddressService
     public function updateResources(LimitResourceAddress $addr)
     {
         $stdResource = $this->tronApi->getAccountResources($addr->address);
-        $addr->total_quantity = $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet;
-        $addr->current_quantity = $addr->resource == 'ENERGY' ? $stdResource->currentEnergy : $stdResource->currentNet;
-        $addr->save();
+        $addr->update([
+            'total_quantity' => $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet,
+            'current_quantity' => $addr->resource == 'ENERGY' ? $stdResource->currentEnergy : $stdResource->currentNet,
+        ]);
     }
 
     public function getLimitList($model): array
     {
-        $key = "limit_list:".md5($model);
+        $key = "limit_list:" . md5($model);
         if ($cache = $this->cache->get($key)) {
             return json_decode($cache, true);
         } else {
@@ -132,7 +133,7 @@ class LimitAddressService
 
     public function clearLimitList($model)
     {
-        $key = "limit_list:".md5($model);
+        $key = "limit_list:" . md5($model);
         if ($this->cache->get($key)) {
             $this->cache->delete($key);
         }
