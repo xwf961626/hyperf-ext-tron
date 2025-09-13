@@ -70,7 +70,7 @@ class EnergyPool extends AbstractApi
             $delegate->address,
             self::SOURCE_ENERGY,
             $amount,
-            0)) {
+            $resourceAddress->permission)) {
             Logger::error("EnergyApi#EnergyPool 发送能量异常失败");
             throw new \Exception('代理资源失败');
         }
