@@ -41,22 +41,7 @@ class TronService
         return TronApiKey::insert($data);
     }
 
-    public static function registerAdminRoutes(): void
-    {
-        Router::get('/admin/tron_api_keys', [ApiController::class, 'getTronApiKeyList']);
-        Router::post('/admin/tron_api_keys', [ApiController::class, 'addApiKey']);
-        Router::get('/admin/apis', [ApiController::class, 'getApiList']);
-        Router::put('/admin/apis', [ApiController::class, 'editApi']);
 
-        // 能量地址池管理
-        Router::post('/admin/energy/address', [UserResourceAddressController::class, 'getAddress']);
-        Router::post('/admin/energy/add', [UserResourceAddressController::class, 'addAddress']);
-        Router::post('/admin/energy/open', [UserResourceAddressController::class, 'switchOpen']);
-
-        Router::addRoute(['GET', 'POST'], '/api/callback/{name}', function (string $name, RequestInterface $request, ResponseInterface $response) {
-            return make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);
-        });
-    }
 
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface
     {
