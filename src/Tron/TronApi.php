@@ -112,14 +112,17 @@ class TronApi
             'lock_period' => $lockPeriod,
             'Permission_id' => $permissionId,
         ];
-        Logger::debug("代理资源参数 => " . json_encode($params, JSON_PRETTY_PRINT));
+        Logger::debug("⚡ 代理资源参数 => " . json_encode($params, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $res = $this->wallet->post("/wallet/delegateresource", $params, $this->service->getCacheApiKeys());
         $content = $res->getBody()->getContents();
-        Logger::info('TronApi#delegateResource => ' . $content);
+        Logger::info("📨 TronApi#delegateResource 响应 => {$content}");
+
         $tx = json_decode($content, true);
         if (isset($tx['txID'])) {
+            Logger::info("✅ 代理资源成功 | TXID={$tx['txID']}");
             return $this->broadcastTransaction($tx);
         } else {
+            Logger::error("❌ TronApi#delegateResource 失败 | 响应: {$content}");
             throw new \RuntimeException('TronApi#DelegateResource failed. API Response:' . $content);
         }
     }
@@ -134,26 +137,39 @@ class TronApi
      * @return string 哈希
      * @throws GuzzleException
      */
-    public function unDelegateResource(string $ownerAddress, string $resource, string $receiverAddress, float $balance, int $permissionId): string
-    {
+    public function unDelegateResource(
+        string $ownerAddress,
+        string $resource,
+        string $receiverAddress,
+        float  $balance,
+        int    $permissionId
+    ): string {
         $params = [
-            'owner_address' => $ownerAddress,
-            'resource' => $resource,
+            'owner_address'    => $ownerAddress,
+            'resource'         => $resource,
             'receiver_address' => $receiverAddress,
-            'balance' => $balance,
-            "visible" => true,
-            'Permission_id' => $permissionId,
+            'balance'          => $balance,
+            'visible'          => true,
+            'Permission_id'    => $permissionId,
         ];
+
+        Logger::debug("♻️ 回收资源参数 => " . json_encode($params, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
         $res = $this->wallet->post("/wallet/undelegateresource", $params, $this->service->getCacheApiKeys());
         $content = $res->getBody()->getContents();
-        Logger::info('TronApi#UndelegateResource => ' . $content);
+
+        Logger::info("📨 TronApi#unDelegateResource 响应 => {$content}");
+
         $tx = json_decode($content, true);
         if (isset($tx['txID'])) {
+            Logger::info("✅ 回收资源成功 | TXID={$tx['txID']}");
             return $this->broadcastTransaction($tx);
         } else {
+            Logger::error("❌ TronApi#unDelegateResource 失败 | 响应: {$content}");
             throw new \RuntimeException('TronApi#unDelegateResource failed. API Response:' . $content);
         }
     }
+
 
     /**
      * 广播交易
@@ -164,15 +180,16 @@ class TronApi
     public function broadcastTransaction($tx): string
     {
         $tx['signature'] = [$this->sign($tx['txID'], $this->privateKey)];
-        Logger::info('TronApi#broadcastTransaction => ' . json_encode($tx));
+        Logger::info("🚀 广播交易 => " . json_encode($tx));
         $res = $this->wallet->post("/wallet/broadcasttransaction", $tx, $this->service->getCacheApiKeys());
-        Logger::info('TronApi#broadcasttransaction => ' . $res->getBody()->getContents());
         $content = $res->getBody()->getContents();
-        Logger::info('TronApi#UndelegateResource => ' . $content);
+        Logger::info("📡 TronApi#broadcasttransaction => {$content}");
         $result = json_decode($content, true);
         if (isset($result['result']) && $result['result'] === true) {
+            Logger::info("✅ 广播成功 | TXID={$result['txid']}");
             return $result['txid'];
         } else {
+            Logger::error("❌ 广播失败 | 响应: {$content}");
             throw new \RuntimeException('TronApi#broadcasttransaction failed. API Response:' . $content);
         }
     }
@@ -286,15 +303,20 @@ class TronApi
      */
     public function getAccountResources(string $address): AccountResource
     {
+        Logger::debug("🔍 查询资源 | 地址: {$address}");
         $resp = $this->wallet->post('/wallet/getaccountresource', [
             'address' => $address,
             'visible' => true,
         ], $this->service->getCacheApiKeys());
+
         if ($resp->getStatusCode() == 200) {
             $result = json_decode($resp->getBody()->getContents());
+            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE));
             return AccountResource::of($result);
         } else {
-            throw new \Exception($resp->getBody()->getContents());
+            $content = $resp->getBody()->getContents();
+            Logger::error("❌ 查询资源失败 | {$content}");
+            throw new \Exception($content);
         }
     }
 
