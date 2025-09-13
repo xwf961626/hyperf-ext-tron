@@ -7,6 +7,7 @@ use Hyperf\Database\Model\Model;
 use Hyperf\Process\AbstractProcess;
 use Psr\Container\ContainerInterface;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\ResourceAddress;
 use William\HyperfExtTron\Service\LimitAddressService;
 use function Hyperf\Config\config;
 
@@ -54,7 +55,7 @@ class LimitCheckProcess extends AbstractProcess
                     foreach ($all as $item) {
                         try {
                             // 检查是否达到阈值
-                            $entity = new $model($item);
+                            $entity = ResourceAddress::make($check->getModel(), $item);
                             if ($check->getRule()->check($entity)) {
                                 $check->getCallback()->handle($entity);
                             }

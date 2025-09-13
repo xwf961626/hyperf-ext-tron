@@ -2,9 +2,9 @@
 
 namespace William\HyperfExtTron\Limit;
 
-use Hyperf\Database\Model\Model;
+use William\HyperfExtTron\Model\ResourceAddress;
 
 interface RuleInterface
 {
-    public function check(Model $model): bool;
+    public function check(ResourceAddress $model): bool;
 }

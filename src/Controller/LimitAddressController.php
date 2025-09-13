@@ -4,15 +4,16 @@ namespace William\HyperfExtTron\Controller;
 
 
 use Hyperf\Contract\ContainerInterface;
+use Hyperf\Database\Model\Model;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use William\HyperfExtTron\Event\LimitAddressClosed;
-use William\HyperfExtTron\Event\LimitAddressCreated;
 use William\HyperfExtTron\Model\LimitResourceAddress;
+use William\HyperfExtTron\Model\ResourceAddress;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Service\LimitAddressService;
 
 class LimitAddressController extends BaseController
 {
+    protected mixed $model;
     public function __construct(ContainerInterface                 $container,
                                 protected EventDispatcherInterface $eventDispatcher,
                                 protected LimitAddressService      $service)
@@ -22,7 +23,7 @@ class LimitAddressController extends BaseController
 
     public function addressList()
     {
-        $q = LimitResourceAddress::query();
+        $q = $this->model::query();
         if ($type = $this->request->query('resource_type')) {
             if (in_array($type, ['ENERGY', 'BANDWIDTH'])) {
                 $q = $q->where('resource', $type);
@@ -40,7 +41,7 @@ class LimitAddressController extends BaseController
         if (!$address = $this->request->input('address', '')) {
             return $this->error('请输入地址');
         }
-        if (LimitResourceAddress::query()->where('address', $address)->exists()) {
+        if ($this->model::query()->where('address', $address)->exists()) {
             return $this->error("该地址已存在");
         }
         if (!$min = $this->request->input('min')) {
@@ -50,7 +51,7 @@ class LimitAddressController extends BaseController
             return $this->error('请输入发送带宽的值');
         }
         $remark = $this->request->input('remark', '');
-        $new = new LimitResourceAddress();
+        $new = new $this->model();
         $new->address = $address;
         $new->resource = $this->request->input('resource_type', 'ENERGY');
         $new->min_quantity = $min;
@@ -59,18 +60,18 @@ class LimitAddressController extends BaseController
         $new->name = $remark;
         $new->max_times = $this->request->input('max_times', 0);
         $new->save();
-        $this->service->clearLimitList(LimitResourceAddress::class);
-        $this->eventDispatcher->dispatch(new LimitAddressCreated($new));
+        $this->service->clearLimitList($this->model::class);
         return $this->success();
     }
 
     public function editAddress($id)
     {
-        /** @var LimitResourceAddress $addr */
-        $addr = LimitResourceAddress::query()->find($id);
+        /** @var Model $addr */
+        $addr = $this->model::query()->find($id);
         if (!$addr) {
             return $this->error('地址不存在');
         }
+        $addr = ResourceAddress::make($this->model, $addr->toArray());
         if ($address = $this->request->input('address', '')) {
             $addr->address = $address;
         }
@@ -98,10 +99,10 @@ class LimitAddressController extends BaseController
             $addr->name = $remark;
         }
         $addr->save();
-        $this->service->clearLimitList(LimitResourceAddress::class);
+        $this->service->clearLimitList($this->model);
         try {
             if ($status === 0 && $oldStatus == 1) {
-                $this->service->closeAddress($addr);
+                $addr->closeAddress();
             }
         } catch (\Exception $e) {
             return $this->error('回收带宽失败：' . $e->getMessage());
@@ -111,14 +112,16 @@ class LimitAddressController extends BaseController
 
     public function deleteAddress($id)
     {
-        $addr = LimitResourceAddress::query()->find($id);
-        if (!$addr) {
+        /** @var Model $addr */
+        $addrEntity = $this->model::query()->find($id);
+        if (!$addrEntity) {
             return $this->error('地址不存在');
         }
+        $addr = ResourceAddress::make($this->model, $addrEntity->toArray());
         if ($addr->status === 1) {
-            $this->service->closeAddress($addr);
+            $addr->closeAddress();
         }
-        $addr->delete();
+        $addrEntity->delete();
         $this->service->clearLimitList(LimitResourceAddress::class);
         return $this->success();
     }
