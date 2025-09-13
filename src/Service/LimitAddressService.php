@@ -85,24 +85,24 @@ class LimitAddressService
         if (!$order) {
             throw new \Exception("订单不存在");
         }
-        if ($order->status != 3) {
+        if ($order->status != 1 || $order->undelegate_status > 0) {
             throw new \Exception("订单状态不正确");
         }
         $balance = intval($order->lock_amount * 1_000_000);
         $owner = UserResourceAddress::where('address', $order->from_address)->first();
         if (!$owner) {
-            throw new \Exception("发送地址不存在：{$order->from_address}");
+            throw new \Exception("订单{$delegateId} 的发送地址不存在：{$order->from_address}");
         }
         try {
             $res = $this->tronApi->unDelegateResource($order->from_address, $order->resource, $order->address, $balance, $owner->permission);
             if ($res) {
-                $order->status = 2;
+                $order->status = 1;
                 $order->undelegate_at = date('Y-m-d H:i:s');
                 $order->undelegate_hash = $res;
                 $order->save();
             }
         } catch (\Exception $e) {
-            Logger::error("回收失败{$e->getMessage()}");
+            Logger::error("订单{$delegateId} 回收失败：{$e->getMessage()} | 地址={$order->from_address}");
             $order->fail_reason = $e->getMessage();
             $order->undelegate_status = -1;
             $order->save();
