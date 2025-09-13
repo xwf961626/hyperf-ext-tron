@@ -78,8 +78,12 @@ class UserResourceAddressController extends BaseController
         try {
             if ($resourceAddress->status != $isOpen) {
                 if (!$isOpen) {
+                    $resourceAddress->status = 0;
+                    $resourceAddress->save();
                     $this->eventDispatcher->dispatch(new UserResourceAddressClosed($resourceAddress));
                 } else {
+                    $resourceAddress->status = 1;
+                    $resourceAddress->save();
                     $this->eventDispatcher->dispatch(new UserResourceAddressOpened($resourceAddress));
                 }
             }
