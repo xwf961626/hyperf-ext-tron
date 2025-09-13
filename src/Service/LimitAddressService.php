@@ -121,7 +121,7 @@ class LimitAddressService
         if ($cache = $this->cache->get($key)) {
             return json_decode($cache, true);
         } else {
-            $all = $model::query()->where('status', 1)->get();
+            $all = $model::query()->where('status', 1)->get()->toArray();
             $this->cache->set($key, json_encode($all));
             return $all;
         }
