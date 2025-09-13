@@ -3,6 +3,8 @@
 namespace William\HyperfExtTron\Service;
 
 use Hyperf\Cache\Cache;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use William\HyperfExtTron\Event\LimitAddressClosed;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\LimitResourceAddress;
 use William\HyperfExtTron\Model\ResourceDelegate;
@@ -11,7 +13,7 @@ use William\HyperfExtTron\Tron\TronApi;
 
 class LimitAddressService
 {
-    public function __construct(protected TronApi $tronApi, protected Cache $cache)
+    public function __construct(protected TronApi $tronApi, protected Cache $cache, protected EventDispatcherInterface $dispatcher)
     {
     }
 
@@ -22,6 +24,7 @@ class LimitAddressService
         $address->save();
 
         $this->recycle($address);
+        $this->dispatcher->dispatch(new LimitAddressClosed($address));
     }
 
     public function recycle(LimitResourceAddress $address): void
@@ -107,7 +110,7 @@ class LimitAddressService
         }
     }
 
-    public function updateResource(LimitResourceAddress $addr)
+    public function updateResources(LimitResourceAddress $addr)
     {
         $stdResource = $this->tronApi->getAccountResources($addr->address);
         $addr->total_quantity = $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet;

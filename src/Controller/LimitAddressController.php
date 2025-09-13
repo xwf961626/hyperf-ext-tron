@@ -98,7 +98,6 @@ class LimitAddressController extends BaseController
         try {
             if ($status === 0 && $oldStatus == 1) {
                 $this->service->closeAddress($addr);
-                $this->eventDispatcher->dispatch(new LimitAddressClosed($addr));
             }
         } catch (\Exception $e) {
             return $this->error('回收带宽失败：' . $e->getMessage());
@@ -114,7 +113,6 @@ class LimitAddressController extends BaseController
         }
         if ($addr->status === 1) {
             $this->service->closeAddress($addr);
-            $this->eventDispatcher->dispatch(new LimitAddressClosed($addr));
         }
         $addr->delete();
         $this->service->clearLimitList(LimitResourceAddress::class);
