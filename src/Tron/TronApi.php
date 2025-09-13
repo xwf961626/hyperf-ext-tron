@@ -112,6 +112,7 @@ class TronApi
             'lock_period' => $lockPeriod,
             'Permission_id' => $permissionId,
         ];
+        Logger::debug("代理资源参数 => " . json_encode($params, JSON_PRETTY_PRINT));
         $res = $this->wallet->post("/wallet/delegateresource", $params, $this->service->getCacheApiKeys());
         $content = $res->getBody()->getContents();
         Logger::info('TronApi#delegateResource => ' . $content);
@@ -313,11 +314,11 @@ class TronApi
         $resource = strtoupper($resource);
         $data = $this->getAccountResources('T9ya3Pck5BoPHfdHvSSPfDnZ5x2BDeEvvV');
         if ($resource === 'ENERGY' && $data->totalEnergy > 0) {
-            $price = $data->totalEnergyWeight / $data->totalEnergy; //1个单位资源的价格
+            $price = $data->totalEnergyWeight / $data->totalEnergyLimit; //1个单位资源的价格
             return $price;
         }
         if ($resource === 'BANDWIDTH' && $data->totalNet > 0) {
-            $price = $data->totalNetWeight / $data->totalNet; //1个单位资源的价格
+            $price = $data->totalNetWeight / $data->totalNetLimit; //1个单位资源的价格
             return $price;
         }
         throw new \Exception('不支持的来源类型：' . $resource);

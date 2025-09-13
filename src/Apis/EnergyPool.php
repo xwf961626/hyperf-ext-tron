@@ -62,13 +62,14 @@ class EnergyPool extends AbstractApi
         }
         Logger::debug('EnergyApi#EnergyPool 使用地址：' . json_encode($resourceAddress));
 
-        $price = $this->tron->getResourcePrice(self::SOURCE_ENERGY);
+        $price = $this->tron->getResourcePrice($delegate->resource);
         Logger::debug('EnergyApi#EnergyPool 查询能量价格：' . $price);
         $amount = intval($delegate->quantity * $price);
         Logger::debug('EnergyApi#EnergyPool 查询能量总金额：' . $amount);
-        if (!$txid = $this->tron->delegateResource($resourceAddress,
+        if (!$txid = $this->tron->delegateResource(
+            $delegate->from_address,
+            $delegate->resource,
             $delegate->address,
-            self::SOURCE_ENERGY,
             $amount,
             $resourceAddress->permission)) {
             Logger::error("EnergyApi#EnergyPool 发送能量异常失败");

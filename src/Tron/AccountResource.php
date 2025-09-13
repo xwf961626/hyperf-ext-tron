@@ -10,6 +10,8 @@ class AccountResource
     public int $totalNet = 0;
     public int $totalEnergyWeight = 0;
     public int $totalNetWeight = 0;
+    public int $totalNetLimit = 0;
+    public int $totalEnergyLimit = 0;
 
     public static function of(mixed $result): self
     {
@@ -28,6 +30,8 @@ class AccountResource
         $self->totalNet = $netLimit + $freeNet;
         $self->totalEnergyWeight = $result->TotalEnergyWeight ?? 0;
         $self->totalNetWeight = $result->TotalNetWeight ?? 0;
+        $self->totalNetLimit = $result->TotalNetLimit ?? 0;
+        $self->totalEnergyLimit = $result->TotalEnergyLimit ?? 0;
         return $self;
     }
 }
