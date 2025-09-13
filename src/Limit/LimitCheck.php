@@ -7,7 +7,7 @@ class LimitCheck
     protected LimitHandlerInterface $callback;
     protected int $interval = 10;
     protected RuleInterface $rule;
-    protected string $name;
+    protected string $name = '';
 
     public function __construct(protected mixed $model)
     {
