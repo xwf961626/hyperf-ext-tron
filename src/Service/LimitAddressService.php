@@ -114,11 +114,13 @@ class LimitAddressService
     {
         $stdResource = $this->tronApi->getAccountResources($addr->address);
         Logger::debug("{$addr->address}|currentNet=$stdResource->currentNet|currentEnergy=$stdResource->currentEnergy");
-        $addr->update([
+
+        $addr->fill([
             'total_quantity' => $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet,
             'current_quantity' => $addr->resource == 'ENERGY' ? $stdResource->currentEnergy : $stdResource->currentNet,
-        ]);
+        ])->save();  // 内存和数据库同步
     }
+
 
     public function getLimitList($model): array
     {
