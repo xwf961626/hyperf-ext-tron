@@ -52,6 +52,7 @@ class LimitAddressController extends BaseController
         $remark = $this->request->input('remark', '');
         $new = new LimitResourceAddress();
         $new->address = $address;
+        $new->resource = $this->request->input('resource_type', 'ENERGY');
         $new->min_quantity = $min;
         $new->send_quantity = $send;
         $new->status = 1;

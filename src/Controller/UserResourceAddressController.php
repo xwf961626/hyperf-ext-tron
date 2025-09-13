@@ -9,6 +9,7 @@ use William\HyperfExtTron\Event\UserResourceAddressClosed;
 use William\HyperfExtTron\Event\UserResourceAddressCreated;
 use William\HyperfExtTron\Event\UserResourceAddressOpened;
 use William\HyperfExtTron\Model\UserResourceAddress;
+use William\HyperfExtTron\Service\UserResourceAddressService;
 use William\HyperfExtTron\Tron\TronApi;
 
 class UserResourceAddressController extends BaseController
@@ -16,7 +17,7 @@ class UserResourceAddressController extends BaseController
     #[Inject]
     protected EventDispatcherInterface $eventDispatcher;
 
-    public function __construct(ContainerInterface $container, protected TronApi $tronApi)
+    public function __construct(ContainerInterface $container, protected TronApi $tronApi,protected UserResourceAddressService $service)
     {
         parent::__construct($container);
     }
@@ -41,10 +42,12 @@ class UserResourceAddressController extends BaseController
             $resourceAddress = new UserResourceAddress();
             $resourceAddress->address = $address;
             $resourceAddress->name = $name;
+            $resourceAddress->operate_address = $operate;
             $permission = $this->tronApi->getPermissionId($address, $operate);
             $resourceAddress->permission = $permission;
             $resourceAddress->type = $type;
             $resourceAddress->save();
+            $this->service->updateResources($resourceAddress);
             $this->eventDispatcher->dispatch(new UserResourceAddressCreated($resourceAddress));
         } catch (\Exception $e) {
             return $this->error("添加能量地址失败：" . $e->getMessage());

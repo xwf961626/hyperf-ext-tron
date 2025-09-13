@@ -242,7 +242,7 @@ class TronApi
      */
     public function getAccounts(string $address): array
     {
-        $resp = $this->wallet->post('/wallet/getaccount' , ['address'=>$address, 'visible'=>true], $this->service->getCacheApiKeys());
+        $resp = $this->wallet->post('/wallet/getaccount', ['address' => $address, 'visible' => true], $this->service->getCacheApiKeys());
         if ($resp->getStatusCode() !== 200) {
             throw new \RuntimeException('TronApi#getAccounts failed: ' . $resp->getBody()->getContents());
         }
@@ -259,6 +259,11 @@ class TronApi
     public function getPermissionId(string $address, string $operationAddress): int
     {
         $accounts = $this->getAccounts($address);
+        return $this->getPermissionIdByAccounts($operationAddress, $accounts);
+    }
+
+    public function getPermissionIdByAccounts($operationAddress, array $accounts): int
+    {
         if (!empty($accounts['active_permission'])) {
             foreach ($accounts['active_permission'] as $activePermission) {
                 $keys = $activePermission['keys'] ?? [];

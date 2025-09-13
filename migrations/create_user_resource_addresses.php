@@ -10,6 +10,7 @@ return new class extends Migration {
             $table->bigIncrements('id');
             $table->string('name', 129)->default('');
             $table->string('address', 129)->default('');
+            $table->string('operate_address', 129)->default('')->comment('操作地址');
             $table->string('mode', 30)->default('');
             $table->string('type', 30)->default('');
             $table->integer('weight')->default(0);

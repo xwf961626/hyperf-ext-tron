@@ -30,7 +30,8 @@ use Hyperf\DbConnection\Model\Model;
  * @property \Carbon\Carbon $created_at 
  * @property \Carbon\Carbon $updated_at 
  * @property string $last_delegate_at 
- * @property string $sort_num 
+ * @property string $sort_num
+ * @property string $operate_address
  */
 class UserResourceAddress extends Model
 {

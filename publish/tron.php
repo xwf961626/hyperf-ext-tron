@@ -33,7 +33,9 @@ return [
         ]
     ],
     // 自有能量池
-    'pool' => [],
+    'pool' => [
+        'update_interval' => env('POOL_UPDATE_INTERVAL', 1),
+    ],
     "apis" => [
         // 维度接口
         Weidubot::API_NAME => [
