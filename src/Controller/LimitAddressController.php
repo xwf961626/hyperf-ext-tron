@@ -24,7 +24,7 @@ class LimitAddressController extends BaseController
     {
         $q = LimitResourceAddress::query();
         if ($type = $this->request->query('resource_type')) {
-            if(in_array($type, ['ENERGY', 'BANDWIDTH'])) {
+            if (in_array($type, ['ENERGY', 'BANDWIDTH'])) {
                 $q = $q->where('resource', $type);
             }
         }
@@ -40,7 +40,7 @@ class LimitAddressController extends BaseController
         if (!$address = $this->request->input('address', '')) {
             return $this->error('请输入地址');
         }
-        if(LimitResourceAddress::query()->where('address', $address)->exists()) {
+        if (LimitResourceAddress::query()->where('address', $address)->exists()) {
             return $this->error("该地址已存在");
         }
         if (!$min = $this->request->input('min')) {
@@ -79,6 +79,9 @@ class LimitAddressController extends BaseController
         }
         if ($send = $this->request->input('send')) {
             $addr->send_quantity = $send;
+        }
+        if ($resource = $this->request->input('resource_type')) {
+            $addr->resource = $resource;
         }
         if ($send_times = $this->request->input('send_times')) {
             $addr->send_times = $send_times;
