@@ -21,7 +21,7 @@ use kornrunner\Secp256k1;
 use kornrunner\Serializer\HexSignatureSerializer;
 use StephenHill\Base58;
 use function Hyperf\Config\config;
-use function Hyperf\Support\env;
+
 use function Hyperf\Support\make;
 
 class TronApi

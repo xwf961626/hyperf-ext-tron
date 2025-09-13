@@ -2,16 +2,25 @@
 
 namespace William\HyperfExtTron\Limit;
 
-
-use GuzzleHttp\Exception\GuzzleException;
-use Hyperf\Database\Model\Model;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\ResourceAddress;
-use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Model\UserResourceAddress;
 
+/**
+ * @property \Closure(ResourceAddress):UserResourceAddress $getOwner 回调函数，返回 string
+ */
 class DefaultHandler implements LimitHandlerInterface
 {
+    private \Closure $getOwner;
+
+    /**
+     * @param \Closure(ResourceAddress):UserResourceAddress $getOwner 回调函数，返回值是 string
+     */
+    public function __construct(\Closure $getOwner)
+    {
+        $this->getOwner = $getOwner;
+    }
+
     /**
      * @param ResourceAddress $model
      * @return void
@@ -20,12 +29,11 @@ class DefaultHandler implements LimitHandlerInterface
     {
         Logger::debug("📊 地址{$model->address}达到阈值{$model->min_quantity}，发送{$model->resource}: {$model->send_quantity}");
 
-        $ownerAddress = env('BANDWIDTH_ADDR');
         /** @var UserResourceAddress $owner */
-        $owner = UserResourceAddress::where('address', $ownerAddress)->first();
+        $owner = call_user_func($this->getOwner, $model);
 
         if (!$owner) {
-            Logger::error("❌ 代理资源失败：owner {$ownerAddress} 不存在");
+            Logger::error("❌ 代理资源失败：owner {$owner->address} 不存在");
             return;
         }
 

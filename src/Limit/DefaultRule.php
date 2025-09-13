@@ -19,7 +19,7 @@ class DefaultRule implements RuleInterface
                 $model->closeAddress();
                 return false;
             }
-            $model->updateResources();
+            Logger::debug("当前地址资源：{$model->current_quantity}");
             return $model->current_quantity < $model->min_quantity;
         } catch (GuzzleException $e) {
             Logger::error($e->getMessage());

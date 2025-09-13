@@ -3,7 +3,6 @@
 namespace William\HyperfExtTron\Model;
 
 use GuzzleHttp\Exception\GuzzleException;
-use Hyperf\Database\Model\Model;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use William\HyperfExtTron\Event\ResourceAddressClosed;
 use William\HyperfExtTron\Event\ResourceAddressDelegated;
@@ -129,7 +128,7 @@ class ResourceAddress
         }
         Logger::debug("💰 资源价格：{$this->resource} = {$price}");
 
-        $lockAmount = $price * $this->send_quantity;
+        $lockAmount = round($price * $this->send_quantity, 6);
 
         // 创建资源代理记录
         $delegate = new ResourceDelegate();
