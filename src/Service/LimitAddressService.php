@@ -2,6 +2,7 @@
 
 namespace William\HyperfExtTron\Service;
 
+use Hyperf\Cache\Cache;
 use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\LimitResourceAddress;
 use William\HyperfExtTron\Model\ResourceDelegate;
@@ -10,7 +11,7 @@ use William\HyperfExtTron\Tron\TronApi;
 
 class LimitAddressService
 {
-    public function __construct(protected TronApi $tronApi)
+    public function __construct(protected TronApi $tronApi, protected Cache $cache)
     {
     }
 
@@ -97,7 +98,7 @@ class LimitAddressService
                 $order->undelegate_hash = $res;
                 $order->save();
             }
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             Logger::error("回收失败{$e->getMessage()}");
             $order->fail_reason = $e->getMessage();
             $order->undelegate_status = -1;
@@ -112,5 +113,25 @@ class LimitAddressService
         $addr->total_quantity = $addr->resource == 'ENERGY' ? $stdResource->totalEnergy : $stdResource->totalNet;
         $addr->current_quantity = $addr->resource == 'ENERGY' ? $stdResource->currentEnergy : $stdResource->currentNet;
         $addr->save();
+    }
+
+    public function getLimitList($model): array
+    {
+        $key = "limit_list:".md5($model);
+        if ($cache = $this->cache->get($key)) {
+            return json_decode($cache, true);
+        } else {
+            $all = $model::query()->where('status', 1)->get();
+            $this->cache->set($key, json_encode($all));
+            return $all;
+        }
+    }
+
+    public function clearLimitList($model)
+    {
+        $key = "limit_list:".md5($model);
+        if ($this->cache->get($key)) {
+            $this->cache->delete($key);
+        }
     }
 }

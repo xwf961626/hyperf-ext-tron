@@ -58,6 +58,7 @@ class LimitAddressController extends BaseController
         $new->name = $remark;
         $new->max_times = $this->request->input('max_times', 0);
         $new->save();
+        $this->service->clearLimitList(LimitResourceAddress::class);
         $this->eventDispatcher->dispatch(new LimitAddressCreated($new));
         return $this->success();
     }
@@ -93,7 +94,7 @@ class LimitAddressController extends BaseController
             $addr->name = $remark;
         }
         $addr->save();
-
+        $this->service->clearLimitList(LimitResourceAddress::class);
         try {
             if ($status === 0 && $oldStatus == 1) {
                 $this->service->closeAddress($addr);
@@ -116,6 +117,7 @@ class LimitAddressController extends BaseController
             $this->eventDispatcher->dispatch(new LimitAddressClosed($addr));
         }
         $addr->delete();
+        $this->service->clearLimitList(LimitResourceAddress::class);
         return $this->success();
     }
 

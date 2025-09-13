@@ -7,13 +7,14 @@ use Hyperf\Database\Model\Model;
 use Hyperf\Process\AbstractProcess;
 use Psr\Container\ContainerInterface;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Service\LimitAddressService;
 use function Hyperf\Config\config;
 
 class LimitCheckProcess extends AbstractProcess
 {
     protected array $configs;
 
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, protected LimitAddressService $service)
     {
         parent::__construct($container);
         $this->configs = config('tron.address_limit');
@@ -44,16 +45,17 @@ class LimitCheckProcess extends AbstractProcess
             }
             while (true) {
                 try {
-                    $all = $model::query()->where('status', 1)->get();
-                    if ($all->isEmpty()) {
+                    $all = $this->service->getLimitList($model);
+                    if (empty($all)) {
                         Logger::debug("无地址需检测");
                         Coroutine::sleep(0.5); // 避免空转
                         continue;
                     }
                     foreach ($all as $item) {
                         // 检查是否达到阈值
-                        if ($check->getRule()->check($item)) {
-                            $check->getCallback()->handle($item);
+                        $entity = new $model($item);
+                        if ($check->getRule()->check($entity)) {
+                            $check->getCallback()->handle($entity);
                         }
                     }
                 } catch (\Throwable $e) {
