@@ -5,46 +5,22 @@ namespace William\HyperfExtTron\Tron;
 
 class TransactionRequest extends BaseRequest
 {
-    /**
-     * 每页项目数。默认 10
-     * @var int
-     */
-    public $limit=10;
-    /**
-     * 起始编号。默认 0
-     * @var int
-     */
-    public $start=0;
-    /**
-     * 开始时间
-     * @var int
-     */
-    public $start_timestamp;
-    /**
-     * 时间结束
-     * @var int
-     */
-    public $end_timestamp;
-    /**
-     * 寄件人地址
-     * @var string
-     */
-    public $contract_address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-    public $relatedAddress;
-    /**
-     * 接收者的地址
-     * @var string
-     */
-    public $toAddress;
-    public $confirm = false;
-
-    public $orderBy = 'block_timestamp,desc';
+    public bool $only_confirmed = false;
+    public bool $only_unconfirmed = false;
+    public int $limit = 20;
+    public int $min_timestamp = 0;
+    public int|null $max_timestamp = null;
+    public string $contract_address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    public string|null $fingerprint = null;
+    public string $order_by = 'block_timestamp,desc';
+    public bool $only_to = false;
+    public bool $only_from = false;
 
     function getSdkResult()
     {
         $params = json_decode(json_encode($this), true);
-        foreach ($params as $key=>$val) {
-            if(!$val) {
+        foreach ($params as $key => $val) {
+            if (!$val) {
                 unset($params[$key]);
             }
         }
