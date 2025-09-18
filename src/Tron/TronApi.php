@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace William\HyperfExtTron\Tron;
 
-use Hyperf\Cache\Cache;
 use Hyperf\Redis\Redis;
 use Hyperf\Redis\RedisFactory;
 use William\HyperfExtTron\Helper\GuzzleClient;
@@ -23,6 +22,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use kornrunner\Secp256k1;
 use kornrunner\Serializer\HexSignatureSerializer;
 use StephenHill\Base58;
+use William\HyperfExtTron\Helper\RedisLock;
 use function Hyperf\Config\config;
 
 use function Hyperf\Support\make;
@@ -38,6 +38,8 @@ class TronApi
     protected FullNodeSolidityHTTPAPI $walletSolidity;
     protected Redis $redis;
     protected TronGridApi $tronGrid;
+    private $cachePrefix = 'ext-tron-';
+    protected RedisLock $lock;
 
     public function __construct(protected TronService $service, RedisFactory $redisFactory)
     {
@@ -50,6 +52,7 @@ class TronApi
         $this->walletSolidity = make(FullNodeSolidityHTTPAPI::class);
         $this->tronGrid = make(TronGridApi::class);
         $this->redis = $redisFactory->get('default');
+        $this->lock = new RedisLock($this->redis, $this->cachePrefix . 'api-lock');
     }
 
     public function getTrx2UsdtRate()
@@ -354,70 +357,102 @@ class TronApi
         throw new \Exception('不支持的来源类型：' . $resource);
     }
 
-    public function getTodayTotal($address, $b=null)
+    private function lockGetTodayTotal($address, \Closure $handle)
     {
-        $td = date('Ymd');
-        $cacheKey = "tron:trans:$td:today:{$address}";
-        $startTimeKey = "tron:trans:$td:start:{$address}";
-        $startTime = $this->redis->get($startTimeKey);
-        $expire = strtotime('tomorrow') - time();
-        if (!$startTime) {
-            $startTime = strtotime(date('Y-m-d 00:00:00')) * 1000;
-            $this->redis->setex($startTimeKey, $expire, $startTime);
+        // 尝试获取锁
+        if ($this->lock->acquire()) {
+            try {
+                Logger::info("成功获取到锁");
+                $result = $handle($address);
+                return $result;
+            } finally {
+                // 执行完操作后释放锁
+                $this->lock->release();
+                Logger::info("锁已释放");
+            }
+        } else {
+            // 如果获取锁失败，处理无法获取锁的逻辑
+            Logger::info("未能获取到锁，稍后再试");
         }
-        $latestTran = null;
-        $limit = 100;
-        while ($response = $this->getTransactions($address, $startTime, $limit)) {
-            $data = $response->data;
-            foreach ($data as $transfer) {
-                $latestTran = $transfer;
-                $this->redis->setex($startTimeKey, $expire, $transfer->block_timestamp);
-                $startTime = $transfer->block_timestamp;
-                $tx = $this->redis->hGet($cacheKey, $transfer->transaction_id);
-                if (!$tx) {
-                    $cacheNotExists = !$this->redis->exists($cacheKey);
-                    $this->redis->hSet($cacheKey, $transfer->transaction_id, json_encode($transfer));
-                    if ($cacheNotExists) {
-                        $this->redis->expire($cacheKey, $expire);
-                    }
+        return null;
+    }
+
+    public function getTodayTotal($address, $al = null)
+    {
+        return $this->lockGetTodayTotal($address, function () use ($address) {
+            $stats = [
+                'totalPay' => 0,
+                'totalPayCount' => 0,
+                'totalIncome' => 0,
+                'totalIncomeCount' => 0,
+                'totalProfit' => 0,
+                'lastTransaction' => null,
+            ];
+            try {
+                $td = date('Ymd');
+                $cacheKey = "{$this->cachePrefix}tron:trans:$td:today:{$address}";
+                $startTimeKey = "{$this->cachePrefix}tron:trans:$td:start:{$address}";
+                $startTime = $this->redis->get($startTimeKey);
+                $expire = strtotime('tomorrow') - time();
+                if (!$startTime) {
+                    $startTime = strtotime(date('Y-m-d 00:00:00')) * 1000;
+                    $this->redis->setex($startTimeKey, $expire, $startTime);
                 }
-            }
-            if (count($data) < $limit) {
-                Logger::debug("结束遍历");
-                break;
-            }
-            sleep(1);
-        }
 
-        $stats = [
-            'totalPay' => 0,
-            'totalPayCount' => 0,
-            'totalIncome' => 0,
-            'totalIncomeCount' => 0,
-            'totalProfit' => 0,
-            'lastTransaction' => null,
-        ];
-        $txs = $this->redis->hGetAll($cacheKey);
-        foreach ($txs as $txid => $txc) {
-            $transfer = json_decode($txc);
-            $amount = $transfer->value / 1_000_000;
-            if ($transfer->to == $address) {
-                $stats['totalIncome'] += $amount;
-                $stats['totalIncomeCount']++;
-            } else {
-                $stats['totalPay'] += $amount;
-                $stats['totalPayCount']++;
+                $limit = 100;
+                while ($response = $this->getTransactions($address, $startTime, $limit)) {
+                    $data = $response->data;
+                    foreach ($data as $transfer) {
+                        $this->redis->setex($startTimeKey, $expire, $transfer->block_timestamp);
+                        $startTime = $transfer->block_timestamp;
+                        $tx = $this->redis->hGet($cacheKey, $transfer->transaction_id);
+                        if (!$tx) {
+                            $cacheNotExists = !$this->redis->exists($cacheKey);
+                            $this->redis->hSet($cacheKey, $transfer->transaction_id, json_encode($transfer));
+                            if ($cacheNotExists) {
+                                $this->redis->expire($cacheKey, $expire);
+                            }
+                        }
+                    }
+                    if (count($data) < $limit) {
+                        Logger::debug("结束遍历");
+                        break;
+                    }
+                    sleep(1);
+                }
+
+
+                $txs = $this->redis->hGetAll($cacheKey);
+                $count = 0;
+                $latestTran = null;
+                foreach ($txs as $txid => $txc) {
+                    $transfer = json_decode($txc);
+                    $amount = $transfer->value / 1_000_000;
+                    if ($transfer->to == $address) {
+                        $stats['totalIncome'] += $amount;
+                        $stats['totalIncomeCount']++;
+                    } else {
+                        $stats['totalPay'] += $amount;
+                        $stats['totalPayCount']++;
+                    }
+                    if (!$latestTran) $latestTran = $transfer;
+                    if ($transfer->block_timestamp > $latestTran->block_timestamp) {
+                        $latestTran = $transfer;
+                    }
+                    $count++;
+                }
+
+                // 保存最新交易
+                if ($count) {
+                    $stats['lastTransaction'] = $latestTran;
+                    $stats['totalProfit'] = $stats['totalIncome'] - $stats['totalPay'];
+                    $stats['lastTime'] = date('Y-m-d H:i:s', intval($latestTran->block_timestamp / 1000));
+                }
+            } catch (\Exception $e) {
+                Logger::error("统计失败：{$e->getMessage()} {$e->getTraceAsString()}");
             }
-            $count++;
-        }
-
-        // 保存最新交易
-        if ($count) {
-            $stats['lastTransaction'] = $latestTran;
-            $stats['totalProfit'] = $stats['totalIncome'] - $stats['totalPay'];
-        }
-
-        return $stats;
+            return $stats;
+        });
     }
 
     public function getTransactions($address, $startTime, $limit = 200)
