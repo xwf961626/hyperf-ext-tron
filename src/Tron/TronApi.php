@@ -459,7 +459,7 @@ class TronApi
     {
         $req = new TransactionRequest();
         $req->limit = $limit;
-        $req->min_timestamp = $startTime;
+        $req->min_timestamp = (int)$startTime;
         $req->order_by = 'block_timestamp,asc';
 
         return $this->getTransaction($address, $req);
