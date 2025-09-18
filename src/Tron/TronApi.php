@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace William\HyperfExtTron\Tron;
 
+use Hyperf\Cache\Cache;
+use Hyperf\Redis\Redis;
+use Hyperf\Redis\RedisFactory;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
 use Elliptic\EC;
@@ -33,8 +36,10 @@ class TronApi
     protected string $privateKey;
     protected FullNodeHttpApi $wallet;
     protected FullNodeSolidityHTTPAPI $walletSolidity;
+    protected Redis $redis;
+    protected TronGridApi $tronGrid;
 
-    public function __construct(protected TronService $service)
+    public function __construct(protected TronService $service, RedisFactory $redisFactory)
     {
         $this->privateKey = config('tron.private_key', '');
         $startBlock = 0;
@@ -43,6 +48,8 @@ class TronApi
         $this->ec = new EC('secp256k1');
         $this->wallet = make(FullNodeHttpApi::class);
         $this->walletSolidity = make(FullNodeSolidityHTTPAPI::class);
+        $this->tronGrid = make(TronGridApi::class);
+        $this->redis = $redisFactory->get('default');
     }
 
     public function getTrx2UsdtRate()
@@ -143,14 +150,15 @@ class TronApi
         string $receiverAddress,
         float  $balance,
         int    $permissionId
-    ): string {
+    ): string
+    {
         $params = [
-            'owner_address'    => $ownerAddress,
-            'resource'         => $resource,
+            'owner_address' => $ownerAddress,
+            'resource' => $resource,
             'receiver_address' => $receiverAddress,
-            'balance'          => $balance,
-            'visible'          => true,
-            'Permission_id'    => $permissionId,
+            'balance' => $balance,
+            'visible' => true,
+            'Permission_id' => $permissionId,
         ];
 
         Logger::debug("♻️ 回收资源参数 => " . json_encode($params, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -344,5 +352,202 @@ class TronApi
             return $price;
         }
         throw new \Exception('不支持的来源类型：' . $resource);
+    }
+
+    public function getTodayTotal($address, $b=null)
+    {
+        $td = date('Ymd');
+        $cacheKey = "tron:trans:$td:today:{$address}";
+        $startTimeKey = "tron:trans:$td:start:{$address}";
+        $startTime = $this->redis->get($startTimeKey);
+        $expire = strtotime('tomorrow') - time();
+        if (!$startTime) {
+            $startTime = strtotime(date('Y-m-d 00:00:00')) * 1000;
+            $this->redis->setex($startTimeKey, $expire, $startTime);
+        }
+        $latestTran = null;
+        $limit = 100;
+        while ($response = $this->getTransactions($address, $startTime, $limit)) {
+            $data = $response->data;
+            foreach ($data as $transfer) {
+                $latestTran = $transfer;
+                $this->redis->setex($startTimeKey, $expire, $transfer->block_timestamp);
+                $startTime = $transfer->block_timestamp;
+                $tx = $this->redis->hGet($cacheKey, $transfer->transaction_id);
+                if (!$tx) {
+                    $cacheNotExists = !$this->redis->exists($cacheKey);
+                    $this->redis->hSet($cacheKey, $transfer->transaction_id, json_encode($transfer));
+                    if ($cacheNotExists) {
+                        $this->redis->expire($cacheKey, $expire);
+                    }
+                }
+            }
+            if (count($data) < $limit) {
+                Logger::debug("结束遍历");
+                break;
+            }
+            sleep(1);
+        }
+
+        $stats = [
+            'totalPay' => 0,
+            'totalPayCount' => 0,
+            'totalIncome' => 0,
+            'totalIncomeCount' => 0,
+            'totalProfit' => 0,
+            'lastTransaction' => null,
+        ];
+        $txs = $this->redis->hGetAll($cacheKey);
+        foreach ($txs as $txid => $txc) {
+            $transfer = json_decode($txc);
+            $amount = $transfer->value / 1_000_000;
+            if ($transfer->to == $address) {
+                $stats['totalIncome'] += $amount;
+                $stats['totalIncomeCount']++;
+            } else {
+                $stats['totalPay'] += $amount;
+                $stats['totalPayCount']++;
+            }
+            $count++;
+        }
+
+        // 保存最新交易
+        if ($count) {
+            $stats['lastTransaction'] = $latestTran;
+            $stats['totalProfit'] = $stats['totalIncome'] - $stats['totalPay'];
+        }
+
+        return $stats;
+    }
+
+    public function getTransactions($address, $startTime, $limit = 200)
+    {
+        $req = new TransactionRequest();
+        $req->start = 0;
+        $req->contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"; // USDT
+        $req->relatedAddress = $address;
+        $req->limit = $limit;
+        $req->start_timestamp = $startTime;
+
+        return $this->getTransaction($req);
+    }
+
+    public function getTransaction(TransactionRequest $req)
+    {
+        $params = $req->getSdkResult();
+        Logger::info("参数: " . json_encode($req));
+
+        try {
+// 'https://api.trongrid.io/v1/accounts/'.trim($text).'/transactions/trc20?limit=15&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+            $uri = '/v1/accounts/' . trim($req->relatedAddress) . '/transactions/trc20';
+            $query = [
+                'limit' => 200,
+                'contract_address' => 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+                'order_by' => 'block_timestamp,asc',
+                'only_confirmed' => true,
+                'min_timestamp' => $req->start_timestamp,
+            ];
+            Logger::info("查询交易记录：$uri " . json_encode($query));
+            $response = $this->tronGrid->get($uri, $query, $this->service->getCacheApiKeys());
+            if ($response->getStatusCode() == 200) {
+                $body = $response->getBody()->getContents();
+                return json_decode($body);
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Logger::error($e->getMessage());
+            return null;
+        }
+    }
+
+    function toAddressFormat(string $address): string
+    {
+        // 如果是 Base58 地址（T 开头的 Tron 地址），需要转 Hex
+        if ($address[0] === 'T') {
+            $decoded = $this->base58checkDecode($address);
+            // Tron 地址前缀 0x41 占 1 字节，取后 20 字节
+            $hex = substr(bin2hex($decoded), 2);
+        } else {
+            // 认为是 Hex 地址，去掉可能的 0x
+            $hex = strtolower($address);
+            if (substr($hex, 0, 2) === '0x') {
+                $hex = substr($hex, 2);
+            }
+        }
+
+        // 校验是否为 40 长度 hex
+        if (!preg_match('/^[0-9a-f]{40}$/', $hex)) {
+            throw new \Exception("Invalid address format: {$address}");
+        }
+
+        // 补足 64 位（ABI 编码要求）
+        return str_pad($hex, 64, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Base58Check 解码 (Tron 地址用的)
+     */
+    function base58checkDecode(string $input): string
+    {
+        $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        $base58 = array_flip(str_split($alphabet));
+        $num = gmp_init(0);
+        foreach (str_split($input) as $char) {
+            if (!isset($base58[$char])) {
+                throw new \Exception("Invalid Base58 character: {$char}");
+            }
+            $num = gmp_add(gmp_mul($num, 58), $base58[$char]);
+        }
+        $hex = gmp_strval($num, 16);
+        if (strlen($hex) % 2 !== 0) {
+            $hex = '0' . $hex;
+        }
+        $bin = hex2bin($hex);
+
+        // 前缀 41 + 20 字节地址 + 4 字节校验和
+        return substr($bin, 0, -4);
+    }
+
+    public function usdtBalance(string $address): float
+    {
+        $balance = 0;
+        try {
+            $params = [
+                'contract_address' => 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+                'function_selector' => 'balanceOf(address)',
+                'parameter' => $this->toAddressFormat($address),
+                'owner_address' => $address,
+                "visible" => true,
+            ];
+            Logger::debug("params => " . json_encode($params));
+
+            $res = $this->wallet->post('/wallet/triggersmartcontract', $params, $this->service->getCacheApiKeys());
+            $json = json_decode($res->getBody()->getContents(), true);
+            if (!empty($json['constant_result'])) {
+                $balance = hexdec($json['constant_result'][0]);
+            }
+        } catch (\Throwable $e) {
+            Logger::error("查询余额失败：{$e->getMessage()}");
+        }
+        return $balance;
+    }
+
+    public function trxBalance(string $address): float
+    {
+        $trxBalance = 0;
+        try {
+            $res = $this->walletSolidity->post('walletsolidity/getaccount', [
+                'address' => $address,
+                'visible' => true
+            ], $this->service->getCacheApiKeys());
+            $json = json_decode($res->getBody()->getContents(), true);
+            if (isset($json['balance'])) {
+                $trxBalance = $json['balance'];
+            }
+        } catch (\Throwable $e) {
+            Logger::error("查询余额失败：{$e->getMessage()}");
+        }
+        return $trxBalance;
     }
 }

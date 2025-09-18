@@ -14,7 +14,7 @@ trait HttpTrait
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
-        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
+//        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
         if(!config('tron.endpoint.no_api_key')){
             static $lastIndex = -1; // 静态变量，跨调用保存上次位置
 

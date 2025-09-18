@@ -5,7 +5,8 @@
   "require": {
     "php": ">=8.3",
     "ext-curl": "*",
-    "ext-redis": "*"
+    "ext-redis": "*",
+    "ext-gmp": "*"
   },
   "require-dev": {
     "hyperf/cache": "~3.1.0",

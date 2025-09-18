@@ -12,7 +12,10 @@ class TronapiTest extends TestCase
     {
         /** @var TronApi $tron */
         $tron = make(TronApi::class);
-        $price = $tron->getResourcePrice('BANDWIDTH');
-        var_dump($price);
+        $addr = 'TCW1KoSRMXyvr41azdDiAdGmTxMZNj4Bhf';
+        $counts = $tron->getTodayTotal($addr);
+        $usdt = $tron->usdtBalance($addr);
+        $trx = $tron->trxBalance($addr);
+        var_dump(compact('counts','usdt', 'trx'));
     }
 }

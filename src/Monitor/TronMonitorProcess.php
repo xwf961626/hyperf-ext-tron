@@ -77,7 +77,7 @@ class TronMonitorProcess extends AbstractProcess
                 $chan->push(1);
                 \Hyperf\Coroutine\go(function () use ($blockNum, $chan) {
                     try {
-                        Logger::debug("TronMonitorProcess#Scan block $blockNum");
+//                        Logger::debug("TronMonitorProcess#Scan block $blockNum");
                         $this->scanner->getBlockByNumber($blockNum, function ($block) use ($blockNum) {
                             $this->handleBlock($blockNum, $block, function (Transaction $tx) {
                                 $this->monitorAdapter->onTransaction($tx);

@@ -57,7 +57,7 @@ class TronService
 
     public function getCacheApiKeys(string $type = self::TYPE_NODE_KEY): array
     {
-        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
+//        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
         if(config('tron.endpoint.no_api_key')){
             return [];
         }
