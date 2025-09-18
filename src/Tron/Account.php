@@ -74,8 +74,8 @@ class Account
         $stakeV2 = new StakeV2();
         if ($this->frozenV2) {
             foreach ($this->frozenV2 as $value) {
-                if ($value['amount']) {
-                    if ($value['type'] === 'ENERGY') {
+                if (isset($value['amount'])) {
+                    if (isset($value['type']) && $value['type'] === 'ENERGY') {
                         $stakeV2->frozenForEnergyV2 = $value['amount'];
                     } else {
                         $stakeV2->frozenForBandWidthV2 = $value['amount'];
