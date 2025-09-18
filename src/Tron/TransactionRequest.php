@@ -29,14 +29,16 @@ class TransactionRequest extends BaseRequest
      * 寄件人地址
      * @var string
      */
-    public $contract_address;
+    public $contract_address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
     public $relatedAddress;
     /**
      * 接收者的地址
      * @var string
      */
     public $toAddress;
-    public $confirm;
+    public $confirm = false;
+
+    public $orderBy = 'block_timestamp,desc';
 
     function getSdkResult()
     {

@@ -458,30 +458,22 @@ class TronApi
     public function getTransactions($address, $startTime, $limit = 200)
     {
         $req = new TransactionRequest();
-        $req->start = 0;
-        $req->contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"; // USDT
         $req->relatedAddress = $address;
         $req->limit = $limit;
         $req->start_timestamp = $startTime;
+        $req->orderBy = 'block_timestamp,asc';
 
         return $this->getTransaction($req);
     }
 
     public function getTransaction(TransactionRequest $req)
     {
-        $params = $req->getSdkResult();
-        Logger::info("参数: " . json_encode($req));
+        $query = $req->getSdkResult();
+        Logger::info("参数: " . json_encode($query));
 
         try {
 // 'https://api.trongrid.io/v1/accounts/'.trim($text).'/transactions/trc20?limit=15&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
             $uri = '/v1/accounts/' . trim($req->relatedAddress) . '/transactions/trc20';
-            $query = [
-                'limit' => 200,
-                'contract_address' => 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
-                'order_by' => 'block_timestamp,asc',
-                'only_confirmed' => true,
-                'min_timestamp' => $req->start_timestamp,
-            ];
             Logger::info("查询交易记录：$uri " . json_encode($query));
             $response = $this->tronGrid->get($uri, $query, $this->service->getCacheApiKeys());
             if ($response->getStatusCode() == 200) {
