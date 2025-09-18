@@ -55,7 +55,7 @@ class TronMonitorProcess extends AbstractProcess
         $this->cache->set(TronConstant::CACHE_SCAN_CURRENT_BLOCK, $startBlock);
 
         while (true) {
-            Logger::debug('扫块...');
+//            Logger::debug('扫块...');
             $currentBlock = $this->getCurrentBlock();
             try {
                 $latestBlock = $this->scanner->getLatestBlockNumber();
