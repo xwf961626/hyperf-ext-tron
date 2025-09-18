@@ -3,6 +3,7 @@
 namespace HyperfTest\Cases;
 
 use Hyperf\Testing\TestCase;
+use William\HyperfExtTron\Tron\Account;
 use William\HyperfExtTron\Tron\TronApi;
 use function Hyperf\Support\make;
 
@@ -12,10 +13,14 @@ class TronapiTest extends TestCase
     {
         /** @var TronApi $tron */
         $tron = make(TronApi::class);
-        $addr = 'TCW1KoSRMXyvr41azdDiAdGmTxMZNj4Bhf';
-        $counts = $tron->getTodayTotal($addr);
-        $usdt = $tron->usdtBalance($addr);
-        $trx = $tron->trxBalance($addr);
-        var_dump(compact('counts','usdt', 'trx'));
+        $addr = 'TY21hRktYANtc92m1eGpQsoCsUXguP5sLq';
+//        $counts = $tron->getTodayTotal($addr);
+//        $usdt = $tron->usdtBalance($addr);
+        $account = new Account($tron->getAccount($addr));
+        $balance = $account->balance;
+        // totalFrozenV2 = frozenForEnergyV2 + frozenForBandWidthV2 + delegatedFrozenV2BalanceForEnergy + delegatedFrozenV2BalanceForBandwidth
+
+        $this->assertTrue($account->isStake());
+
     }
 }

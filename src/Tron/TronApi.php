@@ -322,7 +322,7 @@ class TronApi
 
         if ($resp->getStatusCode() == 200) {
             $result = json_decode($resp->getBody()->getContents());
-            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE));
+            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
             return AccountResource::of($result);
         } else {
             $content = $resp->getBody()->getContents();
@@ -558,7 +558,9 @@ class TronApi
             Logger::debug("params => " . json_encode($params));
 
             $res = $this->wallet->post('/wallet/triggersmartcontract', $params, $this->service->getCacheApiKeys());
-            $json = json_decode($res->getBody()->getContents(), true);
+            $contents = $res->getBody()->getContents();
+            Logger::debug("📥 查询usdt余额返回 => " . $contents);
+            $json = json_decode($contents, true);
             if (!empty($json['constant_result'])) {
                 $balance = hexdec($json['constant_result'][0]);
             }
@@ -566,6 +568,21 @@ class TronApi
             Logger::error("查询余额失败：{$e->getMessage()}");
         }
         return $balance;
+    }
+
+    public function getAccount(string $address): ?Account
+    {
+        try {
+            $res = $this->wallet->post('getaccount', [
+                'address' => $address,
+                'visible' => true
+            ], $this->service->getCacheApiKeys());
+            $arr = json_decode($res->getBody()->getContents(), true);
+            return new Account($arr);
+        } catch (\Throwable $e) {
+            Logger::error("查询余额失败：{$e->getMessage()}");
+        }
+        return null;
     }
 
     public function trxBalance(string $address): float
