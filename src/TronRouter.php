@@ -25,7 +25,8 @@ class TronRouter
         Router::post('energy/add', [UserResourceAddressController::class, 'addAddress']);
         Router::post('energy/open', [UserResourceAddressController::class, 'switchOpen']);
 
-
+        Router::get('delegate/logs', [LimitAddressController::class, 'getLogs']);
+        Router::put('delegate/logs/{id}/retry_recycle', [LimitAddressController::class, 'retryRecycle']);
     }
 
     public static function addWebhookRoute(): void
@@ -35,14 +36,11 @@ class TronRouter
         });
     }
     
-    public static function addLimitAddressRoutes(): void
+    public static function addLimitAddressRoutes($controller): void
     {
-        Router::get('limit/addresses', [LimitAddressController::class, 'addressList']);
-        Router::post('limit/addresses', [LimitAddressController::class, 'addAddress']);
-        Router::put('limit/addresses/{id}', [LimitAddressController::class, 'editAddress']);
-        Router::delete('limit/addresses/{id}', [LimitAddressController::class, 'deleteAddress']);
-
-        Router::get('delegate/logs', [LimitAddressController::class, 'getLogs']);
-        Router::put('delegate/logs/{id}/retry_recycle', [LimitAddressController::class, 'retryRecycle']);
+        Router::get('limit/addresses', [$controller, 'addressList']);
+        Router::post('limit/addresses', [$controller, 'addAddress']);
+        Router::put('limit/addresses/{id}', [$controller, 'editAddress']);
+        Router::delete('limit/addresses/{id}', [$controller, 'deleteAddress']);
     }
 }

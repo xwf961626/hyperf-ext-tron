@@ -2,13 +2,28 @@
 
 namespace William\HyperfExtTron\Limit;
 
-use Hyperf\Database\Model\Model;
+use GuzzleHttp\Exception\GuzzleException;
+use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\ResourceAddress;
 
 class DefaultRule implements RuleInterface
 {
 
-    public function check(Model $model): bool
+    public function check(ResourceAddress $model): bool
     {
-        return true;
+        try {
+            $model->updateResources();
+            Logger::debug("检查地址{$model->address}是否达到阈值{$model->min_quantity}");
+            if ($model->send_times >= $model->max_times) {
+                Logger::debug("地址{$model->address}发送次数达到阈值{$model->max_times}关闭地址");
+                $model->closeAddress();
+                return false;
+            }
+            Logger::debug("当前地址资源：{$model->current_quantity}");
+            return $model->current_quantity < $model->min_quantity;
+        } catch (GuzzleException $e) {
+            Logger::error($e->getMessage());
+            return false;
+        }
     }
 }

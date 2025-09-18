@@ -2,9 +2,9 @@
 
 namespace William\HyperfExtTron\Limit;
 
-use Hyperf\Database\Model\Model;
+use William\HyperfExtTron\Model\ResourceAddress;
 
 interface LimitHandlerInterface
 {
-    public function handle(Model $model);
+    public function handle(ResourceAddress $model);
 }

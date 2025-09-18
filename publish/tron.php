@@ -29,7 +29,11 @@ return [
     'address_limit' => [
         'enable' => true,
         'check' => [
-            (new LimitCheck(LimitResourceAddress::class))->setCallback(new DefaultHandler())->setInterval(30)->setRule(new DefaultRule()),
+            (new LimitCheck(LimitResourceAddress::class))
+                ->setCallback(new DefaultHandler(function (\William\HyperfExtTron\Model\ResourceAddress $address): UserResourceAddress {
+                    return UserResourceAddress::where('address', env('BANDWIDTH_ADDR'))->first();
+                }))
+                ->setInterval(30)->setRule(new DefaultRule()),
         ]
     ],
     // 自有能量池
