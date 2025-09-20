@@ -203,7 +203,7 @@ class CatFee extends AbstractApi
     {
         try {
             $data = $this->get('/v1/account');
-            return $data['balance'];
+            return round($data['balance']/1_000_000, 6);
 //            return $data['balance_usdt'];
         } catch (Exception $e) {
             Logger::error("CatFee /v1/account fail: " . $e->getMessage());

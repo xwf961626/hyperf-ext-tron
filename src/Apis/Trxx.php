@@ -28,7 +28,7 @@ class Trxx extends AbstractApi
         if ($resp->getStatusCode() != 200) {
             throw new \Exception($contents);
         }
-        $result = json_decode($this->delegateResponseData, true);
+        $result = json_decode($contents, true);
         if (isset($result['balance'])) {
             return round($result['balance'] / 1_000_000, 6);
         }
