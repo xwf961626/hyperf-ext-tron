@@ -89,21 +89,13 @@ class CatFee extends AbstractApi
         ];
 
 
-        $response = $this->post($path, $queryParams);
+        $data = $this->post($path, $queryParams);
         // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
         //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
         //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
         //"confirm_status":"UNCONFIRMED","balance":84595000}}
-        Logger::debug("CatFee /v1/order Response Code: 200");
-        Logger::debug("CatFee /v1/order Response Body: $response");
-        $result = json_decode($response, true);
-        if ($result['code'] === 0) {
-            $data = $result['data'];
-            $this->delegateResponseData = $data;
-            return $data['delegate_hash'];
-        } else {
-            throw new Exception("CatFee /v1/order fail: $response");
-        }
+        $this->delegateResponseData = $data;
+        return $data['delegate_hash'];
     }
 
     // 创建 HTTP 请求
@@ -175,10 +167,10 @@ class CatFee extends AbstractApi
         curl_close($ch);
         Logger::debug("CatFee $path Response Code: 200");
         $result = json_decode($response, true);
-        if ($result['code'] === 1) {
+        if ($result['code'] === 0) {
             return $result['data'];
         }
-        throw new Exception('CatFee 接口调用失败:'.$response);
+        throw new Exception('CatFee 接口调用失败:' . $response);
     }
 
 
