@@ -25,12 +25,13 @@ class UpdateApiBalanceProcess extends AbstractProcess
             $apis = Api::query()->get();
             /** @var Api $api */
             foreach ($apis as $api) {
-                $instance = $this->factory->get(config('tron.apis')[$api['name']]['class']);
                 try {
+                    $instance = $this->factory->get(config('tron.apis')[$api['name']]['class']);
+                    Logger::debug("{$instance->name()} 更新余额...");
                     $balance = $instance->getBalance();
                     $api->balance = $balance;
                     $api->save();
-                    Logger::error("{$instance->name()} 更新余额成功：{$balance}");
+                    Logger::debug("{$instance->name()} 更新余额成功：{$balance}");
                 } catch (\Exception $e) {
                     Logger::error("{$instance->name()} 更新余额失败：{$e->getMessage()}");
                 }
