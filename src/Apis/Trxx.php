@@ -21,6 +21,19 @@ class Trxx extends AbstractApi
         $this->callbackUrl = $this->model->callback_url ?? $configs['callback_url'];
     }
 
+    public function getBalance(): float
+    {
+        $resp = $this->_get('/api/v1/frontend/index-data', [], ['API-KEY' => $this->apiKey]);
+        $contents = $resp->getBody()->getContents();
+        if ($resp->getStatusCode() != 200) {
+            throw new \Exception($contents);
+        }
+        $result = json_decode($this->delegateResponseData, true);
+        if (isset($result['balance'])) {
+            return round($result['balance'] / 1_000_000, 6);
+        }
+        throw new \Exception('trxx查询失败：' . $contents);
+    }
 
     public function delegateHandler(ResourceDelegate $delegate): string
     {

@@ -178,7 +178,7 @@ class CatFee extends AbstractApi
         if ($result['code'] === 1) {
             return $result['data'];
         }
-        throw new Exception($result['message']);
+        throw new Exception('CatFee 接口调用失败:'.$response);
     }
 
 
