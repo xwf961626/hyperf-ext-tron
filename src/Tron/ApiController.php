@@ -56,6 +56,7 @@ class ApiController extends BaseController
     {
         try {
             $result = $this->service->editApi($this->request);
+            $this->service->deleteApiCache();
             return $this->success($result);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());

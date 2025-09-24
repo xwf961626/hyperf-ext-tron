@@ -121,8 +121,12 @@ class TronService
         if ($apiSecret = $request->input('api_secret')) {
             $updates['api_secret'] = $apiSecret;
         }
-        $this->cache->delete(self::API_LIST_CACHE_KEY);
         return $api->update($updates);
+    }
+
+    public function deleteApiCache()
+    {
+        $this->cache->delete(self::API_LIST_CACHE_KEY);
     }
 
 }

@@ -36,6 +36,7 @@ class UpdateApiBalanceProcess extends AbstractProcess
                     Logger::error("{$instance->name()} 更新余额失败：{$e->getMessage()}");
                 }
             }
+            $this->tronService->deleteApiCache();
             sleep(10);
         }
     }

@@ -29,14 +29,14 @@ class Logger
     public static function info(string $string)
     {
         $time = self::getTime();
-        $logger = ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
+        $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
         $logger->info("[$time] {$string}");
     }
 
     public static function debug(string $string)
     {
         $time = self::getTime();
-        $logger = ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
+        $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
         $logger->debug("[$time] {$string}");
     }
 
@@ -49,7 +49,7 @@ class Logger
     public static function error(string $msg)
     {
         $time = self::getTime();
-        $logger = ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
+        $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
         $logger->error("[$time] {$msg}");
     }
 }
