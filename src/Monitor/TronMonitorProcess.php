@@ -79,9 +79,7 @@ class TronMonitorProcess extends AbstractProcess
                     try {
 //                        Logger::debug("TronMonitorProcess#Scan block $blockNum");
                         $this->scanner->getBlockByNumber($blockNum, function ($block) use ($blockNum) {
-                            $this->handleBlock($blockNum, $block, function (Transaction $tx) {
-                                $this->monitorAdapter->onTransaction($tx);
-                            });
+                            $this->handleBlock($blockNum, $block);
                         });
                     } catch (Throwable $e) {
                         Logger::error("Error scanning block {$blockNum}: " . $e->getMessage());
@@ -101,7 +99,7 @@ class TronMonitorProcess extends AbstractProcess
         }
     }
 
-    protected function handleBlock(int $blockNum, array $block, callable $onTransaction): void
+    protected function handleBlock(int $blockNum, array $block): void
     {
         $txList = $block['transactions'] ?? [];
         $utcTimestampMs = $block['block_header']['raw_data']['timestamp'] ?? 0; // 毫秒
@@ -124,7 +122,8 @@ class TronMonitorProcess extends AbstractProcess
                 if (!$this->monitorAdapter->isMonitorAddress($to) && !$this->monitorAdapter->isMonitorAddress($parameter['owner_address'])) {
                     continue;
                 }
-                $onTransaction(Transaction::of([
+
+                $this->monitorAdapter->onTransaction(Transaction::of([
                     'tx_id' => $txID,
                     'currency' => 'TRX',
                     'from' => $parameter['owner_address'],
