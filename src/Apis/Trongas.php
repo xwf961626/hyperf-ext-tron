@@ -102,7 +102,7 @@ class Trongas extends AbstractApi
 
     protected function afterDelegateSuccess(): void
     {
-        $this->model->price = round($this->delegateResponseData['orderMoney'] * 1_000_000 / $this->delegateResponseData->quantity, 2);
+        $this->model->price = round($this->delegateResponseData['orderMoney'] * 1_000_000 / $this->order->quantity, 2);
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 2);
         $this->model->save();
         $this->order->price = round($this->delegateResponseData['orderMoney'], 2);
