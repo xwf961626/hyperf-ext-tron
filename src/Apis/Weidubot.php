@@ -16,6 +16,8 @@ class Weidubot extends AbstractApi
     protected string $apiKey = '';
     protected string $baseUrl = 'https://weidubot.cc';
     protected string $apiSecret;
+    private array $delegateResponseData;
+    private ResourceDelegate $order;
 
 
     public function delegateHandler(ResourceDelegate $delegate): string
@@ -53,13 +55,17 @@ class Weidubot extends AbstractApi
                     $detailData = $detail['data'];
                     $orderStatus = $detailData['status']; // paid, waiting, success
                     if ($orderStatus == 'success' && !empty($detailData['orders'])) {
-                        $info = $detailData['orders'][0];
-                        Logger::debug('查询成功： #' . $attempt . '  ' . json_encode($info));
-                        $txID = $info['tx_id'];
-                        $fromAddress = $info['from_address'];
-                        $count = $info['count'];
-                        $delegate->from_address = $fromAddress;
-                        return $txID;
+
+                        Logger::debug('查询成功： #' . $attempt . '  ' . json_encode($detailData));
+                        $txIds = [];
+                        $fromAddresses = [];
+                        foreach ($detailData['orders'] as $info) {
+                            $txIds[] = $info['tx_id'];
+                            $fromAddresses[] = $info['from_address'];
+                        }
+                        $this->delegateResponseData = array_merge($detailData, ['hashes' => $txIds, 'from_addresses' => $fromAddresses]);
+                        $this->order = $delegate;
+                        return implode(',', $txIds);
                     }
                 }
             } catch (\Exception $e) {
@@ -190,5 +196,13 @@ class Weidubot extends AbstractApi
         }
         Logger::debug('时长：' . $time);
         return [$time, $lockDuration];
+    }
+
+    protected function afterDelegateSuccess(): void
+    {
+        $this->model->price = $this->delegateResponseData['price'];
+        $this->model->save();
+        $this->order->from_address = implode(',', $this->delegateResponseData['from_addresses']);
+        $this->order->save();
     }
 }

@@ -6,11 +6,13 @@ use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use Hyperf\Guzzle\ClientFactory;
 use Hyperf\Guzzle\CoroutineHandler;
+use William\HyperfExtTron\Helper\Logger;
 use function Hyperf\Config\config;
 
 class FullNodeSolidityHTTPAPI
 {
     use HttpTrait;
+
     protected Client $client;
 
     public function __construct(ClientFactory $clientFactory)
@@ -25,6 +27,7 @@ class FullNodeSolidityHTTPAPI
             ],
             'debug' => true,
         ];
+        Logger::debug('solidity节点 => ' . $fullNodeBaseURL);
         $this->client = $clientFactory->create(array_merge($options, ['base_uri' => $fullNodeBaseURL . '/walletsolidity']));
     }
 }

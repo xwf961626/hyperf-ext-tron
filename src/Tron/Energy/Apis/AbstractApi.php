@@ -56,8 +56,11 @@ abstract class AbstractApi implements ApiInterface
             $delegate->tx_id = $hash;
             $delegate->status = 1;
             $delegate->save();
-
-            $this->afterDelegateSuccess();
+            try {
+                $this->afterDelegateSuccess();
+            } catch (\Exception $e) {
+                Logger::error("代理成功后处理失败：{$e->getMessage()} {$e->getTraceAsString()}");
+            }
         } catch (\Exception $e) {
             Logger::error(get_class($this) . " delegate err: " . $e->getMessage());
             $delegate->fail_reason = $e->getMessage();

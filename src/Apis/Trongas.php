@@ -17,6 +17,8 @@ class Trongas extends AbstractApi
     protected string $baseUrl = "https://trongas.io";
     protected string $username = '';
 
+    private mixed $delegateResponseData;
+
     public function init($configs)
     {
         $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
@@ -36,6 +38,9 @@ class Trongas extends AbstractApi
         ];
         Logger::debug('参数：' . json_encode($params));
         $data = $this->post('/api/pay', $params);
+        $this->delegateResponseData = $data;
+        $delegate->from_address = implode(',', $data['sendAddressList']);
+        $delegate->save();
         return implode(',', $data['delegate_hash']);
     }
 
@@ -79,5 +84,12 @@ class Trongas extends AbstractApi
     function parseTime(mixed $time)
     {
         // TODO: Implement parseTime() method.
+    }
+
+    protected function afterDelegateSuccess(): void
+    {
+        $this->model->price = round($this->delegateResponseData['orderMoney'] * 1_000_000 / $this->delegateResponseData->quantity, 2);
+        $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 2);
+        $this->model->save();
     }
 }

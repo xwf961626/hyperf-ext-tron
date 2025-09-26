@@ -95,6 +95,7 @@ class CatFee extends AbstractApi
         //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
         //"confirm_status":"UNCONFIRMED","balance":84595000}}
         $this->delegateResponseData = $data;
+
         return $data['delegate_hash'];
     }
 
@@ -203,7 +204,7 @@ class CatFee extends AbstractApi
     {
         try {
             $data = $this->get('/v1/account');
-            return round($data['balance']/1_000_000, 6);
+            return round($data['balance'] / 1_000_000, 6);
 //            return $data['balance_usdt'];
         } catch (Exception $e) {
             Logger::error("CatFee /v1/account fail: " . $e->getMessage());
@@ -214,6 +215,8 @@ class CatFee extends AbstractApi
     protected function afterDelegateSuccess(): void
     {
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 6);
+        $price = round($this->delegateResponseData['pay_amount_sun'] / $this->delegateResponseData['quantity'], 2);
+        $this->model->price = $price;
         $this->model->save();
     }
 }

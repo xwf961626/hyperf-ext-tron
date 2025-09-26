@@ -13,8 +13,8 @@ class TronapiTest extends TestCase
     {
         /** @var TronApi $tron */
         $tron = make(TronApi::class);
-        $addr = 'TCW1KoSRMXyvr41azdDiAdGmTxMZNj4Bhf';
-        $counts = $tron->getTodayTotal($addr);
+        $addr = 'TDDDDDD3ptnAHT5zFNux5ETTq2CodURqNT';
+        $counts = $tron->usdtBalance($addr);
 //        $usdt = $tron->usdtBalance($addr);
 //        $account = new Account($tron->getAccount($addr));
 //        $balance = $account->balance;

@@ -13,6 +13,7 @@ class Trxx extends AbstractApi
     const API_NAME = 'trxx';
     protected string $baseUrl = 'https://trxx.io';
     private $delegateResponseData;
+    private ResourceDelegate $order;
 
 
     public function init($configs)
@@ -50,14 +51,17 @@ class Trxx extends AbstractApi
             $params['callback_url'] = $callbackUrl;
         }
         $resp = $this->post('/api/v1/frontend/order', $params);
-        $this->delegateResponseData = $resp->getBody()->getContents();
+        $content = $resp->getBody()->getContents();
         if ($resp->getStatusCode() != 200) {
-            throw new \Exception($this->delegateResponseData);
+            throw new \Exception($content);
         }
-        $result = json_decode($this->delegateResponseData, true);
+        $result = json_decode($content, true);
         if ($result['errno']) {
             throw new \Exception($result['message']);
         }
+
+        $this->order = $delegate;
+        $this->delegateResponseData = $result;
 
         if (!$this->callbackUrl()) {
             Logger::debug("未设置回调地址，主动查询订单结果");
@@ -76,6 +80,7 @@ class Trxx extends AbstractApi
     protected function afterDelegateSuccess(): void
     {
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 6);
+        $this->model->price = round($this->delegateResponseData['amount'] / $this->order->quantity, 2);
         $this->model->save();
     }
 
