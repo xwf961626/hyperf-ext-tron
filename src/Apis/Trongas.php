@@ -41,9 +41,9 @@ class Trongas extends AbstractApi
         $data = $this->post('/api/pay', $params);
         $this->delegateResponseData = $data;
         $this->order = $delegate;
-        $delegate->from_address = implode(',', $data['sendAddressList']);
-        $delegate->save();
-        return implode(',', $data['delegate_hash']);
+        //{"code":10000,"msg":"提交表单成功","data":{"orderId":"1758891441864573","balance":298770000,"orderMoney":1.23,
+        //"hash":["316c7f6d816fdb9b000d187a8691d37d54803410e1cf5c7af071253f498693e4"],"sendAddressList":["TNE9sufheVdZXuPtEd2fKXpabi8dYTNpHL"]}}
+        return implode(',', $data['hash']);
     }
 
     private function post($url, array $params = [])
@@ -106,6 +106,7 @@ class Trongas extends AbstractApi
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 2);
         $this->model->save();
         $this->order->price = round($this->delegateResponseData['orderMoney'], 2);
+        $this->order->from_address = implode(',', $this->delegateResponseData['sendAddressList']);
         $this->order->save();
     }
 }
