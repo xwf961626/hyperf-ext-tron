@@ -91,7 +91,7 @@ class TronService
         if ($cache) {
             return json_decode($cache, true);
         } else {
-            $results = Api::orderBy('weight', 'desc')->get()->toArray();
+            $results = Api::orderBy('weight', 'desc')->where('status', 'active')->get()->toArray();
             $this->cache->set(self::API_LIST_CACHE_KEY, json_encode($results));
             return $results;
         }
