@@ -127,13 +127,17 @@ class LimitAddressController extends BaseController
 
     public function getLogs()
     {
-        $pageSize = $this->request->query('pageSize', 10);
-        $builder = ResourceDelegate::query();
-        if ($address = $this->request->query('address')) {
-            $builder->where('address', $address);
+        try{
+            $pageSize = $this->request->query('pageSize', 10);
+            $builder = ResourceDelegate::query();
+            if ($address = $this->request->query('address')) {
+                $builder->where('address', $address);
+            }
+            $list = $builder->orderBy('id', 'desc')->paginate($pageSize);
+            return $this->success(compact('list'));
+        }catch (\Exception $e) {
+            return $this->error($e->getMessage());
         }
-        $list = $builder->orderBy('id', 'desc')->paginate($pageSize);
-        return $this->success(compact('list'));
     }
 
     public function retryRecycle($id)
