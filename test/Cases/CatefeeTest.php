@@ -16,7 +16,12 @@ class CatefeeTest extends TestCase
         $api = $factory->get(CatFee::class);
         $name = $api->name();
         $this->assertEquals(CatFee::API_NAME, $name);
-//        $api->send('THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix', 65000, '1h', 1);
-        $api->getBalance();
+        $api->delegate(
+            'TDDDDDD3ptnAHT5zFNux5ETTq2CodURqNT',
+            65000,
+            '1h',
+        );
+//        $data = $api->getOrderDetail('8a5de52a-60c6-47e2-9f9d-222a09eecc8c');
+//        var_dump($data);
     }
 }

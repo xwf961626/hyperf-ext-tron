@@ -35,7 +35,6 @@ abstract class AbstractApi implements ApiInterface
             Logger::error('参数错误: power, time');
             throw new \Exception('能量数、时长未定义');
         }
-
         [$time, $lockDuration] = $this->parseTime($time);
         $delegate = new ResourceDelegate();
         $delegate->quantity = $power;

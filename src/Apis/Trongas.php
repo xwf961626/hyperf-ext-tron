@@ -85,7 +85,19 @@ class Trongas extends AbstractApi
 
     function parseTime(mixed $time)
     {
-        // TODO: Implement parseTime() method.
+        $lockDuration = 0;
+        // 兼容闪租设置
+        if ($time == '30min' || $time == '5min' || ctype_digit($time) || str_contains($time, 'h')) {
+            $time = 1;
+            $lockDuration = 60;
+        }
+
+        if (str_contains($time, 'day')) {
+            $time = intval($time).'天';
+            $lockDuration = intval($time) * 60 * 24;
+        }
+        Logger::debug('时长：' . $time);
+        return [$time, $lockDuration];
     }
 
     protected function afterDelegateSuccess(): void

@@ -1,4 +1,5 @@
 <?php
+
 namespace HyperfTest\Cases;
 
 use Hyperf\Testing\TestCase;
@@ -20,7 +21,11 @@ class WeiduTest extends TestCase
         $api = $factory->get(Weidubot::class);
         $name = $api->name();
         $this->assertEquals('weidu', $name);
-        $result = $api->getBalance();
+        $result = $api->delegate(
+            'TDDDDDD3ptnAHT5zFNux5ETTq2CodURqNT',
+            65000,
+            '1h',
+        );
         var_dump($result);
     }
 }

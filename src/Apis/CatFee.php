@@ -91,13 +91,33 @@ class CatFee extends AbstractApi
 
 
         $data = $this->post($path, $queryParams);
+        Logger::debug("返回参数：" . json_encode($data));
         // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
         //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
         //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
         //"confirm_status":"UNCONFIRMED","balance":84595000}}
-        $this->delegateResponseData = $data;
         $this->order = $delegate;
+        if ($data['status'] != 'DELEGATE_SUCCESS') {
+            $data = $this->getOrderDetail($data['id']);
+        }
+        $this->delegateResponseData = $data;
         return $data['delegate_hash'];
+    }
+
+    function getOrderDetail($id): array
+    {
+        Logger::debug("EnergyApi#CatFee 查询订单：$id");
+        $path = "/v1/order/{$id}";
+        $data = $this->get($path);
+        Logger::debug("查询结果：".json_encode($data));
+        if ($data['status'] != 'DELEGATE_SUCCESS' && $data['status'] != 'PAYMENT_SUCCESS') {
+            throw new Exception('代理失败：' . $data['status']);
+        }
+        if ($data['status'] == 'DELEGATE_SUCCESS') {
+            return $data;
+        }
+        sleep(1);
+        return $this->getOrderDetail($id);
     }
 
     // 创建 HTTP 请求
@@ -107,6 +127,7 @@ class CatFee extends AbstractApi
      */
     function post($path, $queryParams = [])
     {
+        Logger::debug("发送参数：" . json_encode($queryParams));
         return $this->createRequest($path, 'POST', $queryParams);
     }
 
@@ -167,7 +188,7 @@ class CatFee extends AbstractApi
         }
 
         curl_close($ch);
-        Logger::debug("CatFee $path Response Code: 200");
+        Logger::info("CatFee $path Response Code: 200");
         $result = json_decode($response, true);
         if ($result['code'] === 0) {
             return $result['data'];

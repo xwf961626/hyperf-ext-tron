@@ -15,9 +15,10 @@ class TrongasTest extends TestCase
         $factory = $this->container->get(EnergyApiFactory::class);
         /** @var Trongas $api */
         $api = $factory->get(Trongas::class);
-        $name = $api->name();
-        $this->assertEquals(Trongas::API_NAME, $name);
-        $balance = $api->getBalance();
-        var_dump($balance);
+        $api->delegate(
+            'TDDDDDD3ptnAHT5zFNux5ETTq2CodURqNT',
+            65000,
+            '1h',
+        );
     }
 }

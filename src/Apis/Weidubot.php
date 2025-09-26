@@ -16,13 +16,13 @@ class Weidubot extends AbstractApi
     protected string $apiKey = '';
     protected string $baseUrl = 'https://weidubot.cc';
     protected string $apiSecret;
-    private array $delegateResponseData;
+    private array $delegateResponseData = [];
     private ResourceDelegate $order;
 
 
     public function delegateHandler(ResourceDelegate $delegate): string
     {
-
+        Logger::debug("维度代理资源开始");
         $params = [
             'count' => $delegate->quantity, //委托的能量点数 (最低 30000)
             'period' => $delegate->time,
@@ -32,10 +32,13 @@ class Weidubot extends AbstractApi
         $this->validate($params);
 
         if (!env('WEIDU_ON', false)) {
+            Logger::debug("维度代理未开启");
             return "weidu off";
         }
 
+        Logger::debug("维度代理参数：".json_encode($params));
         $result = $this->buyEnergy($params);
+        Logger::debug("维度代理结果：".json_encode($result));
         $data = $result['data'];
         $orderSn = $data['order_sn'];
         $price = $data['price'];
@@ -133,7 +136,7 @@ class Weidubot extends AbstractApi
     public function post(string $url, array $params)
     {
         $body = json_encode($params);
-        $response = $this->_post($url, $params);
+        $response = $this->_post($url, $params, $this->getHeaders());
         $contents = $response->getBody()->getContents();
         if ($response->getStatusCode() !== 200) {
             Logger::debug('Weidu ' . $url . ' POST  => ' . $body);
