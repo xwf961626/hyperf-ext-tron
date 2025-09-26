@@ -8,6 +8,7 @@ use Hyperf\HttpMessage\Stream\SwooleStream;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Controller\BaseController;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\UserResourceAddress;
 
 /**
@@ -45,8 +46,8 @@ class ApiController extends BaseController
     public function getApiList()
     {
         try {
-            $result = $this->service->getApiList($this->request);
-            return $this->success($result);
+            $results = Api::orderBy('weight', 'desc')->get()->toArray();
+            return $this->success($results);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
         }
