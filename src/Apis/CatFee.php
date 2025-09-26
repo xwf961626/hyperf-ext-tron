@@ -15,6 +15,7 @@ class CatFee extends AbstractApi
     const API_NAME = 'cateFee';
     protected string $baseUrl = 'https://api.catfee.io';
     private mixed $delegateResponseData;
+    private ResourceDelegate $order;
 
 
     public function init($configs)
@@ -95,7 +96,7 @@ class CatFee extends AbstractApi
         //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
         //"confirm_status":"UNCONFIRMED","balance":84595000}}
         $this->delegateResponseData = $data;
-
+        $this->order = $delegate;
         return $data['delegate_hash'];
     }
 
@@ -218,5 +219,8 @@ class CatFee extends AbstractApi
         $price = round($this->delegateResponseData['pay_amount_sun'] / $this->delegateResponseData['quantity'], 2);
         $this->model->price = $price;
         $this->model->save();
+
+        $this->order->price = $this->model->price;
+        $this->order->save();
     }
 }

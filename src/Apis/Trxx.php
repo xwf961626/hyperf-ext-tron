@@ -82,6 +82,9 @@ class Trxx extends AbstractApi
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 6);
         $this->model->price = round($this->delegateResponseData['amount'] / $this->order->quantity, 2);
         $this->model->save();
+
+        $this->order->price = $this->model->price;
+        $this->order->save();
     }
 
 

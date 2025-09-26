@@ -18,6 +18,7 @@ class Trongas extends AbstractApi
     protected string $username = '';
 
     private mixed $delegateResponseData;
+    private ResourceDelegate $order;
 
     public function init($configs)
     {
@@ -39,6 +40,7 @@ class Trongas extends AbstractApi
         Logger::debug('参数：' . json_encode($params));
         $data = $this->post('/api/pay', $params);
         $this->delegateResponseData = $data;
+        $this->order = $delegate;
         $delegate->from_address = implode(',', $data['sendAddressList']);
         $delegate->save();
         return implode(',', $data['delegate_hash']);
@@ -91,5 +93,7 @@ class Trongas extends AbstractApi
         $this->model->price = round($this->delegateResponseData['orderMoney'] * 1_000_000 / $this->delegateResponseData->quantity, 2);
         $this->model->balance = round($this->delegateResponseData['balance'] / 1_000_000, 2);
         $this->model->save();
+        $this->order->price = $this->model->price;
+        $this->order->save();
     }
 }

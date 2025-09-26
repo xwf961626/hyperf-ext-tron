@@ -203,6 +203,7 @@ class Weidubot extends AbstractApi
         $this->model->price = $this->delegateResponseData['price'];
         $this->model->save();
         $this->order->from_address = implode(',', $this->delegateResponseData['from_addresses']);
+        $this->order->price = $this->model->price;
         $this->order->save();
     }
 }
