@@ -15,11 +15,11 @@ return [
     'private_key' => env('TRON_PRIVATE_KEY', ''),
     'monitor' => [
         'start_block_mode' => 'latest', // latest-接口获取最新块，cache-缓存中获取最后一个块
-        'addresses' => [],
+        'addresses' => env('MONITOR_ADDRESS', ''),
     ],
     'endpoint' => [
         'no_api_key' => env('TRON_NO_API_KEY', true),
-        'api_keys' => [],
+        'api_keys' => env('TRON_API_KEYS', ''),
         'full_node' => env('TRON_FULL_NODE', 'https://api.trongrid.io'),
         'solidity_node' => env('TRON_FULL_NODE_SOLIDITY', 'https://api.trongrid.io'),
     ],

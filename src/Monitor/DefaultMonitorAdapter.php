@@ -22,8 +22,8 @@ class DefaultMonitorAdapter implements MonitorAdapterInterface
     public function __construct(ContainerInterface $container)
     {
         $this->config = $container->get(ConfigInterface::class)->get(TronConstant::CONFIG_NAME, []);
-        $this->addresses = $this->config['monitor']['addresses'];
-        $this->currentBlock = $this->config['monitor']['start_block']??0;
+        $this->addresses = explode(',', $this->config['monitor']['addresses']);
+        $this->currentBlock = $this->config['monitor']['start_block'] ?? 0;
     }
 
     public function isMonitorAddress(string $address): bool
@@ -34,5 +34,10 @@ class DefaultMonitorAdapter implements MonitorAdapterInterface
     public function onTransaction(Transaction $tx): void
     {
         Logger::debug("TronMonitor [{$tx->currency}] {$tx->from} -> {$tx->to} | {$tx->amount} | {$tx->tx_id}");
+    }
+
+    public function onNotify(array $notifyData): void
+    {
+        Logger::debug("TronMonitor on notify <= " . json_encode($notifyData));
     }
 }

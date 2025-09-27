@@ -2,23 +2,15 @@
 
 namespace William\HyperfExtTron\Tron;
 
-use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\HttpServer\Router\Router;
-use Hyperf\HttpServer\Contract\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
-use William\HyperfExtTron\Controller\UserResourceAddressController;
-use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Tron\Energy\EnergyApiFactory;
-use function Hyperf\Config\config;
-use function Hyperf\Support\make;
 
 class TronService
 {
-    const string TYPE_NODE_KEY = 'node';
+    use ApiKeyTrait;
     const string TYPE_SCAN_KEY = 'scan';
-    const string API_KEY_CACHE_KEY = 'api_key_set';
     const API_LIST_CACHE_KEY = 'api_list';
 
     public function __construct(private CacheInterface $cache, protected EnergyApiFactory $apiFactory)
@@ -52,36 +44,6 @@ class TronService
             $query = $query->where('type', $type);
         }
         return $query->paginate((int)$request->query('limit', 15));
-    }
-
-    public function getCacheApiKeys(string $type = self::TYPE_NODE_KEY): array
-    {
-//        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
-        if (config('tron.endpoint.no_api_key')) {
-            return [];
-        }
-        $cacheKey = $type . self::API_KEY_CACHE_KEY;
-
-        try {
-            // 尝试从缓存获取
-            $keys = $this->cache->get($cacheKey, []);
-
-            if (empty($keys)) {
-                // 缓存为空，从数据库拉取
-                $keys = TronApiKey::where('type', $type)
-                    ->where('status', 'active')
-                    ->pluck('api_key')
-                    ->toArray();
-
-                // 存入缓存，设置过期时间 1 小时
-                $this->cache->set($cacheKey, $keys, 3600);
-            }
-
-            return $keys;
-        } catch (\Throwable $e) {
-            Logger::error("查询APIKEY失败：{$e->getMessage()} {$e->getTraceAsString()}");
-            return [];
-        }
     }
 
     public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection|array
