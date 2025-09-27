@@ -42,7 +42,6 @@ class TronService
     }
 
 
-
     public function getTronApiKeyList(mixed $request): \Hyperf\Contract\LengthAwarePaginatorInterface
     {
         $query = TronApiKey::query();
@@ -58,7 +57,7 @@ class TronService
     public function getCacheApiKeys(string $type = self::TYPE_NODE_KEY): array
     {
 //        Logger::debug("是否使用api-key：".config('tron.endpoint.no_api_key'));
-        if(config('tron.endpoint.no_api_key')){
+        if (config('tron.endpoint.no_api_key')) {
             return [];
         }
         $cacheKey = $type . self::API_KEY_CACHE_KEY;
@@ -120,6 +119,9 @@ class TronService
         }
         if ($apiSecret = $request->input('api_secret')) {
             $updates['api_secret'] = $apiSecret;
+        }
+        if ($aliasName = $request->input('alias_name')) {
+            $updates['alias_name'] = $aliasName;
         }
         return $api->update($updates);
     }

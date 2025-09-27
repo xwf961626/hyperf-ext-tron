@@ -13,7 +13,8 @@ use Hyperf\DbConnection\Model\Model;
  * @property string $api_key 
  * @property string $api_secret 
  * @property string $balance 
- * @property int $price 
+ * @property string $alias_name 别名
+ * @property int $price
  * @property string $status 
  * @property string|null $callback_url
  * @property int $weight
@@ -39,6 +40,7 @@ class Api extends Model
         'price',
         'status',
         'weight',
+        'alias_name',
     ];
 
     /**
