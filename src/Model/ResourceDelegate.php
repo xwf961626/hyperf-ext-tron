@@ -124,4 +124,9 @@ class ResourceDelegate extends Model implements EnergyLogModelInterface
     {
         return $this->undelegate_at;
     }
+
+    public function apiInfo()
+    {
+        return $this->belongsTo(Api::class, 'api', 'name');
+    }
 }

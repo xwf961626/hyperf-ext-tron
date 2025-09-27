@@ -129,7 +129,7 @@ class LimitAddressController extends BaseController
     {
         try{
             $pageSize = $this->request->query('pageSize', 10);
-            $builder = ResourceDelegate::query();
+            $builder = ResourceDelegate::with(['apiInfo']);
             if ($address = $this->request->query('address')) {
                 $builder->where('address', $address);
             }
