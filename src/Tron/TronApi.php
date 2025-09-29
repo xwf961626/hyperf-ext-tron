@@ -561,6 +561,17 @@ class TronApi
         return $balance;
     }
 
+    public function getTransactionById($hash): array
+    {
+        $url = "/walletsolidity/gettransactionbyid";
+        $resp = $this->walletSolidity->post($url, ['value' => $hash, 'visible' => true], $this->service->getCacheApiKeys());
+        if ($resp->getStatusCode() == 200) {
+            return json_decode($resp->getBody()->getContents(), true);
+        } else {
+            throw new \Exception($resp->getBody()->getContents());
+        }
+    }
+
     public function getAccount(string $address): ?Account
     {
         try {

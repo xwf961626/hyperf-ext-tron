@@ -13,14 +13,16 @@ class TronapiTest extends TestCase
     {
         /** @var TronApi $tron */
         $tron = make(TronApi::class);
-        $addr = 'TDDDDDD3ptnAHT5zFNux5ETTq2CodURqNT';
-        $counts = $tron->usdtBalance($addr);
-//        $usdt = $tron->usdtBalance($addr);
-//        $account = new Account($tron->getAccount($addr));
-//        $balance = $account->balance;
-        // totalFrozenV2 = frozenForEnergyV2 + frozenForBandWidthV2 + delegatedFrozenV2BalanceForEnergy + delegatedFrozenV2BalanceForBandwidth
-
-//        $this->assertTrue($account->isStake());
-var_dump($counts);
+        $hash = '4c0e55e57cae1333191b43f6f9cd2cd10084bcb822b80c24ea3facfaf5d00773';
+        $tx = $tron->getTransactionById($hash);
+        if (isset($tx['raw_data']) && !empty($tx['raw_data']['contract'])) {
+            $contract = $tx['raw_data']['contract'][0];
+            if (isset($contract['parameter']) && isset($contract['parameter']['value'])) {
+                $from = $contract['parameter']['value']['owner_address'] ?? '';
+                if ($from) {
+                    var_dump($from);
+                }
+            }
+        }
     }
 }
