@@ -93,7 +93,6 @@ class Weidubot extends AbstractApi
             'x-timestamp' => $timestamp,
             'x-signature' => $sign
         ];
-        error_log('headers: ' . json_encode($headers));
         return $headers;
     }
 
