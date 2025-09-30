@@ -30,14 +30,14 @@ class Logger
     {
         $time = self::getTime();
         $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
-        $logger->info("[$time] {$string}");
+        $logger->info($string);
     }
 
     public static function debug(string $string)
     {
         $time = self::getTime();
         $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
-        $logger->debug("[$time] {$string}");
+        $logger->debug($string);
     }
 
     public static function getTime()
@@ -50,6 +50,6 @@ class Logger
     {
         $time = self::getTime();
         $logger = ApplicationContext::getContainer()->get(LoggerFactory::class)->get();
-        $logger->error("[$time] {$msg}");
+        $logger->error($msg);
     }
 }
