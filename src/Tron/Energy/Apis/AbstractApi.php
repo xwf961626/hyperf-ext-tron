@@ -60,6 +60,9 @@ abstract class AbstractApi implements ApiInterface
             } catch (\Exception $e) {
                 Logger::error("代理成功后处理失败：{$e->getMessage()} {$e->getTraceAsString()}");
             }
+
+            $this->updateApiBalance();
+
         } catch (\Exception $e) {
             Logger::error(get_class($this) . " delegate err: " . $e->getMessage() . $e->getTraceAsString());
             $delegate->fail_reason = $e->getMessage();
@@ -158,4 +161,17 @@ abstract class AbstractApi implements ApiInterface
     abstract function parseTime(mixed $time);
 
     abstract function delegateHandler(ResourceDelegate $delegate): string;
+
+    protected function updateApiBalance(): void
+    {
+        try {
+            Logger::debug("{$this->name()} 更新余额...");
+            $balance = $this->getBalance();
+            $this->model->balance = $balance;
+            $this->model->save();
+            Logger::debug("{$this->name()} 更新余额成功：{$balance}");
+        } catch (\Exception $e) {
+            Logger::error("更新API余额失败：{$e->getMessage()} {$e->getTraceAsString()}");
+        }
+    }
 }

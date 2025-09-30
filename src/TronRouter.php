@@ -19,6 +19,7 @@ class TronRouter
         Router::post('tron_api_keys', [ApiController::class, 'addApiKey']);
         Router::get('apis', [ApiController::class, 'getApiList']);
         Router::put('apis', [ApiController::class, 'editApi']);
+        Router::put('update_balances', [ApiController::class, 'updateBalances']);
 
         // 能量地址池管理
         Router::post('energy/address', [UserResourceAddressController::class, 'getAddress']);
@@ -35,7 +36,7 @@ class TronRouter
             return make(EnergyApiFactory::class)->handleApiCallback($name, $request, $response);
         });
     }
-    
+
     public static function addLimitAddressRoutes($controller): void
     {
         Router::get('limit/addresses', [$controller, 'addressList']);

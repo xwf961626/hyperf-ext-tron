@@ -10,6 +10,7 @@ use Hyperf\HttpServer\Contract\ResponseInterface;
 use William\HyperfExtTron\Controller\BaseController;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\UserResourceAddress;
+use William\HyperfExtTron\Process\UpdateApiBalanceProcess;
 
 /**
  * @\Hyperf\HttpServer\Annotation\Controller(prefix="admin")
@@ -20,7 +21,6 @@ class ApiController extends BaseController
 {
     #[Inject]
     protected TronService $service;
-
 
 
     public function addApiKey()
@@ -59,6 +59,16 @@ class ApiController extends BaseController
             $result = $this->service->editApi($this->request);
             $this->service->deleteApiCache();
             return $this->success($result);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function updateBalances(UpdateApiBalanceProcess $process)
+    {
+        try {
+            $process->update();
+            return $this->success();
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
         }

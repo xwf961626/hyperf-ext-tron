@@ -22,22 +22,27 @@ class UpdateApiBalanceProcess extends AbstractProcess
     {
         Logger::debug("开始更新API余额");
         while (true) {
-            $apis = Api::query()->get();
-            /** @var Api $api */
-            foreach ($apis as $api) {
-                try {
-                    $instance = $this->factory->get(config('tron.apis')[$api['name']]['class']);
-                    Logger::debug("{$instance->name()} 更新余额...");
-                    $balance = $instance->getBalance();
-                    $api->balance = $balance;
-                    $api->save();
-                    Logger::debug("{$instance->name()} 更新余额成功：{$balance}");
-                } catch (\Exception $e) {
-                    Logger::error("{$instance->name()} 更新余额失败：{$e->getMessage()}");
-                }
-            }
-            $this->tronService->deleteApiCache();
+            $this->update();
             sleep(10);
         }
+    }
+
+    public function update(): void
+    {
+        $apis = Api::query()->get();
+        /** @var Api $api */
+        foreach ($apis as $api) {
+            try {
+                $instance = $this->factory->get(config('tron.apis')[$api['name']]['class']);
+                Logger::debug("{$instance->name()} 更新余额...");
+                $balance = $instance->getBalance();
+                $api->balance = $balance;
+                $api->save();
+                Logger::debug("{$instance->name()} 更新余额成功：{$balance}");
+            } catch (\Exception $e) {
+                Logger::error("{$instance->name()} 更新余额失败：{$e->getMessage()}");
+            }
+        }
+        $this->tronService->deleteApiCache();
     }
 }
