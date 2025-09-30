@@ -61,7 +61,7 @@ abstract class AbstractApi implements ApiInterface
                 Logger::error("代理成功后处理失败：{$e->getMessage()} {$e->getTraceAsString()}");
             }
         } catch (\Exception $e) {
-            Logger::error(get_class($this) . " delegate err: " . $e->getMessage());
+            Logger::error(get_class($this) . " delegate err: " . $e->getMessage() . $e->getTraceAsString());
             $delegate->fail_reason = $e->getMessage();
             $delegate->status = -1;
             $delegate->save();

@@ -92,6 +92,10 @@ class CatFee extends AbstractApi
 
         $data = $this->post($path, $queryParams);
         Logger::debug("返回参数：" . json_encode($data));
+        if (!$data) {
+            Logger::error("EnergyApi#CatFee 代理失败");
+            throw new Exception("代理失败失败");
+        }
         // 成功示例： {"code":0,"data":{"id":"2671ba7b-a323-49e6-b4a4-19adca27ebbf","resource_type":"ENERGY",
         //"billing_type":"API","source_type":"API","pay_timestamp":1757410028796,"receiver":"THH5zsXVQ8dSy7FNg1putmh6cR4Eeu5kix",
         //"pay_amount_sun":1105000,"quantity":65000,"duration":60,"status":"PAYMENT_SUCCESS","activate_status":"ALREADY_ACTIVATED",
@@ -100,24 +104,35 @@ class CatFee extends AbstractApi
         if ($data['status'] != 'DELEGATE_SUCCESS') {
             $data = $this->getOrderDetail($data['id']);
         }
+        if (!$data) {
+            Logger::error("EnergyApi#CatFee 代理失败或订单查询失败");
+            throw new Exception("代理失败或订单查询失败");
+        }
         $this->delegateResponseData = $data;
         return $data['delegate_hash'];
     }
 
-    function getOrderDetail($id): array
+    function getOrderDetail($id): ?array
     {
-        Logger::debug("EnergyApi#CatFee 查询订单：$id");
-        $path = "/v1/order/{$id}";
-        $data = $this->get($path);
-        Logger::debug("查询结果：".json_encode($data));
-        if ($data['status'] != 'DELEGATE_SUCCESS' && $data['status'] != 'PAYMENT_SUCCESS') {
-            throw new Exception('代理失败：' . $data['status']);
+        try {
+            Logger::debug("EnergyApi#CatFee 查询订单：$id");
+            $path = "/v1/order/{$id}";
+            $data = $this->get($path);
+            Logger::debug("查询结果：" . json_encode($data));
+            if (!$data) {
+                throw new Exception("EnergyApi#CatFee $path 接口返回空异常, 重试查询");
+            }
+            if ($data['status'] != 'DELEGATE_SUCCESS' && $data['status'] != 'PAYMENT_SUCCESS') {
+                return null;
+            }
+            if ($data['status'] == 'DELEGATE_SUCCESS') {
+                return $data;
+            }
+            return null;
+        } catch (Exception $e) {
+            sleep(1);
+            return $this->getOrderDetail($id);
         }
-        if ($data['status'] == 'DELEGATE_SUCCESS') {
-            return $data;
-        }
-        sleep(1);
-        return $this->getOrderDetail($id);
     }
 
     // 创建 HTTP 请求
@@ -188,12 +203,12 @@ class CatFee extends AbstractApi
         }
 
         curl_close($ch);
-        Logger::info("CatFee $path Response Code: 200");
+        Logger::info("CatFee $path Response  $response");
         $result = json_decode($response, true);
         if ($result['code'] === 0) {
             return $result['data'];
         }
-        throw new Exception('CatFee 接口调用失败:' . $response);
+        return null;
     }
 
 
