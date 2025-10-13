@@ -11,7 +11,7 @@ use function Hyperf\Config\config;
 
 class UpdateUserResourceAddressProcess extends AbstractProcess
 {
-
+    public string $name = 'update-user-resource-address';
     public function __construct(ContainerInterface $container, protected UserResourceAddressService $service)
     {
         parent::__construct($container);

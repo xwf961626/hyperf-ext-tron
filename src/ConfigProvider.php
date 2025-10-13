@@ -3,6 +3,7 @@
 namespace William\HyperfExtTron;
 
 use William\HyperfExtTron\Command\TronCommand;
+use William\HyperfExtTron\Listener\ClearStartupFileListener;
 use William\HyperfExtTron\Monitor\DefaultMonitorAdapter;
 use William\HyperfExtTron\Monitor\MonitorAdapterInterface;
 
@@ -18,6 +19,7 @@ class ConfigProvider
                 TronCommand::class,
             ],
             'listeners' => [
+                ClearStartupFileListener::class,
             ],
             // 合并到  config/autoload/annotations.php 文件
             'annotations' => [

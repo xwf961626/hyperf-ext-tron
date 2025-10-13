@@ -152,7 +152,7 @@ class TronMonitorProcess extends AbstractProcess
                             continue;
                         }
 
-                        $onTransaction(Transaction::of([
+                        $this->monitorAdapter->onTransaction(Transaction::of([
                             'tx_id' => $txID,
                             'currency' => 'USDT',
                             'from' => $parameter['owner_address'],

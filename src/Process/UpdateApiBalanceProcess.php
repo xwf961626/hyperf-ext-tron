@@ -12,6 +12,7 @@ use function Hyperf\Config\config;
 
 class UpdateApiBalanceProcess extends AbstractProcess
 {
+    public string $name = 'update-api-balance';
     public function __construct(ContainerInterface $container, protected EnergyApiFactory $factory, protected TronService $tronService)
     {
         parent::__construct($container);

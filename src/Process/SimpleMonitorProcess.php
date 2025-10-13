@@ -10,6 +10,8 @@ use William\HyperfExtTron\Service\MonitorService;
 
 class SimpleMonitorProcess extends AbstractProcess
 {
+    public string $name = 'simple-monitor';
+
     protected MonitorService $monitorService;
 
     public function __construct(ContainerInterface $container)
