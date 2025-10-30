@@ -23,6 +23,7 @@ use function Hyperf\Support\make;
  * @property int $status
  * @property int $send_quantity
  * @property string|null $name
+ * @property string|null $last_opened_at
  */
 class ResourceAddress
 {

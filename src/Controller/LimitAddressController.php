@@ -103,6 +103,10 @@ class LimitAddressController extends BaseController
             if ($status === 0 && $oldStatus == 1) {
                 $addr->closeAddress();
             }
+            if($status === 1 && $oldStatus === 0) {
+                $addr->last_opened_at = date('Y-m-d H:i:s');
+                $addr->save();
+            }
         } catch (\Exception $e) {
             return $this->error('回收带宽失败：' . $e->getMessage());
         }

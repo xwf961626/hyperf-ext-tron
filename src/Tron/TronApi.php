@@ -322,7 +322,7 @@ class TronApi
 
         if ($resp->getStatusCode() == 200) {
             $result = json_decode($resp->getBody()->getContents());
-            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+//            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
             return AccountResource::of($result);
         } else {
             $content = $resp->getBody()->getContents();

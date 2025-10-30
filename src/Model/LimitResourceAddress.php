@@ -20,6 +20,7 @@ use Hyperf\DbConnection\Model\Model;
  * @property int $max_times 
  * @property \Carbon\Carbon $created_at 
  * @property \Carbon\Carbon $updated_at 
+ * @property \Carbon\Carbon $last_opened_at
  */
 class LimitResourceAddress extends Model
 {
@@ -43,6 +44,7 @@ class LimitResourceAddress extends Model
         'status',
         'send_times',
         'max_times',
+        'last_opened_at',
     ];
 
     /**
