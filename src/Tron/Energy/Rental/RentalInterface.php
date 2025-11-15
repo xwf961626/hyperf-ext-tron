@@ -3,7 +3,6 @@
 namespace William\HyperfExtTron\Tron\Energy\Rental;
 
 
-use William\HyperfExtTronModel\User;
 use Hyperf\HttpServer\Contract\RequestInterface;
 
 interface RentalInterface
@@ -13,10 +12,10 @@ interface RentalInterface
     /**
      * @throws \Exception
      */
-    public function createOrder(RequestInterface $request, User $user, array $options): mixed;
+    public function createOrder(RequestInterface $request, int $userId, array $options): mixed;
 
     /**
      * @throws \Exception
      */
-    public function rent(mixed $order, ?User $user = null): mixed;
+    public function rent(mixed $order, int $userId = 0): mixed;
 }

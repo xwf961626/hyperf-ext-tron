@@ -3,7 +3,6 @@
 namespace William\HyperfExtTron\Tron\Energy\Rental;
 
 use William\HyperfExtTron\Helper\Logger;
-use William\HyperfExtTronModel\User;
 use William\HyperfExtTron\Tron\Coin;
 use William\HyperfExtTron\Tron\Energy\Attributes\Rental;
 use William\HyperfExtTron\Tron\Energy\Model\RentEnergyOrder;
@@ -17,12 +16,12 @@ class Rent extends AbstractRentalService
 {
     protected string $name = Rental::RENT;
 
-    public function createOrder(RequestInterface $request, User $user, array $options): array
+    public function createOrder(RequestInterface $request, $userId, array $options): array
     {
         Logger::info("能量租赁：" . json_encode($request->all()));
-        $time_expire_way = $request->input('time_expire_way', 0);//1:1小时，2:1天，3:3天
-        $energy_num = $request->input('energy_num', 0);//能量数量
-        $user_address = $request->input('user_address', '');//能量数量
+        $time_expire_way = $options['time_expire_way'] ?? 0;//1:1小时，2:1天，3:3天
+        $energy_num = $options['energy_num'] ?? 0;//能量数量
+        $user_address = $options['user_address'] ?? 0;//能量数量
         $time_expire_way_text = RentEnergyOrder::$time_expire_way[$time_expire_way] ?? '';
         if (!$time_expire_way_text) {
             throw new Exception('时间格式错误');
@@ -49,7 +48,7 @@ class Rent extends AbstractRentalService
         /** @var RentEnergyOrder $rentorder */
         $rentorder = RentEnergyOrder::query()->create([
             'id' => Utils::makeOrderNo(),
-            'user_id' => $user->id,
+            'user_id' => $userId,
             'time_expire_way' => $time_expire_way,
             'energy_num' => $energy_num,
             'user_address' => $user_address,
@@ -62,7 +61,7 @@ class Rent extends AbstractRentalService
 
         $order = PayOrderServices::create($rentorder, $pay_type, $price, [
             'subject' => '能量租赁购买',
-            'user_id' => $user->id,
+            'user_id' => $userId,
         ])->pay();
         $day = 1;
         if ($time_expire_way >= 24) {
@@ -77,7 +76,7 @@ class Rent extends AbstractRentalService
      * @throws GuzzleException
      * @throws Exception
      */
-    public function rent(mixed $order, ?User $user = null): ?RentEnergyOrder
+    public function rent(mixed $order, int $userId = 0): ?RentEnergyOrder
     {
         if ($order instanceof RentEnergyOrder) {
             try {
@@ -93,7 +92,7 @@ class Rent extends AbstractRentalService
                     $order->user_address,
                     $order->energy_num,
                     $time,
-                    $user->id,
+                    $userId,
                 );
                 $order->status = RentEnergyOrder::STATUS_SUCCESS;
                 $order->energy_log_id = $energyLog->id;

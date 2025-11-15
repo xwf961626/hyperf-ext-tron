@@ -2,9 +2,8 @@
 
 namespace William\HyperfExtTron\Tron\Energy\Rental;
 
-use William\HyperfExtTronModel\AdminSetting;
-use William\HyperfExtTronModel\User;
-use William\HyperfExtTron\Tron\Energy\Apis\Weidubot;
+
+use William\HyperfExtTron\Tron\Energy\Apis\ApiInterface;
 use William\HyperfExtTron\Tron\Energy\Attributes\Rental;
 use William\HyperfExtTron\Tron\Energy\Model\QuickrentOrder;
 use William\HyperfExtTron\Tron\Energy\Utils;
@@ -15,10 +14,7 @@ use Hyperf\HttpServer\Contract\RequestInterface;
 class QuickRent extends AbstractRentalService
 {
     protected string $name = Rental::QUICK_RENT;
-    const CONFIG_KEY = 'quickrent_cfg';
-    const FIVE_MIN_CONFIG_KEY = '5min_quickrent_cfg';
-
-    public function createOrder(RequestInterface $request, User $user, array $options): ?QuickRentOrder
+    public function createOrder(RequestInterface $request, int $userId, array $options): ?QuickRentOrder
     {
         $exchange_usdt_address = $this->settingService->get('quickrent_trx_address');
         $this->log->info("Rental#QuickRent 开始创建闪租订单:" . json_encode($options) . ', 收款地址:' . $exchange_usdt_address);
@@ -36,18 +32,7 @@ class QuickRent extends AbstractRentalService
 
         $energy = 0;
         $receive_price = 0;
-        $this->log->info("先检查常规的闪租价格配置");
-        $rentCfg = $this->getQuickRentCfg(self::CONFIG_KEY, $amount, $energy, $receive_price);
-        $time = '1h';
-        if ($energy <= 0) {
-            $this->log->info("常规的没有，再检查5分钟闪租的配置");
-            $rentCfg = $this->getQuickRentCfg(self::FIVE_MIN_CONFIG_KEY, $amount, $energy, $receive_price);
-            $time = '5min';
-        }
-        if ($energy <= 0) {
-            throw new \Exception("amount = {$amount}, energy <= 0, cfg=" . json_encode($rentCfg));
-        }
-        $this->log->info("找到符合條件的配置：energy = $energy, receive_price = $receive_price");
+        $time = 0;
         /** @var QuickrentOrder $order */
         $order = QuickrentOrder::query()->create([
             'id' => Utils::makeOrderNo(),
@@ -68,13 +53,13 @@ class QuickRent extends AbstractRentalService
     /**
      * @throws GuzzleException
      */
-    public function rent(mixed $order, User $user = null): mixed
+    public function rent(mixed $order, int $userId = 0): mixed
     {
         if ($order instanceof QuickRentOrder) {
-            /** @var Weidubot $api */
+            /** @var ApiInterface $api */
             $api = $this->api;
             try {
-                $energyLog = $api->send($order->user_address, $order->energy_num, $order->energy_period);
+                $energyLog = $api->delegate($order->user_address, $order->energy_num, $order->energy_period, $userId);
                 $this->log->info('EnergyService#QuickRent 发送能量成功: energy_log => ' . json_encode($energyLog));
                 $order->energy_log_id = $energyLog->id;
                 $order->energy_policy = $this->api->name();
@@ -88,19 +73,5 @@ class QuickRent extends AbstractRentalService
             }
         }
         throw new \Exception('订单类型错误:不是闪租订单:' . get_class($order));
-    }
-
-    private function getQuickRentCfg($key, $amount, &$energy, &$receive_price)
-    {
-        $quickrent_cfg = AdminSetting::getSetting($key);
-        $quickrent_cfg = $quickrent_cfg ? json_decode($quickrent_cfg, true) : [];
-        foreach ($quickrent_cfg as $k => $v) {
-            if ($amount == $v['price']) {
-                $energy = $v['energy'];
-                $receive_price = $v['price'];
-                break;
-            }
-        }
-        return $quickrent_cfg;
     }
 }
