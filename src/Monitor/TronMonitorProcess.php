@@ -139,7 +139,7 @@ class TronMonitorProcess extends AbstractProcess
                 $contractAddress = $contract['parameter']['value']['contract_address'] ?? '';
 
                 // 判断是否为 USDT 合约地址（Hex）
-                if (strtolower($contractAddress) === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t') {
+                if ($contractAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t') {
                     $dataHex = $contract['parameter']['value']['data'] ?? '';
                     $methodId = substr($dataHex, 0, 8);
                     if ($methodId === 'a9059cbb') {
