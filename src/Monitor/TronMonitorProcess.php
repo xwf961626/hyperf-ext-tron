@@ -142,12 +142,18 @@ class TronMonitorProcess extends AbstractProcess
                 if ($contractAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t') {
                     $dataHex = $contract['parameter']['value']['data'] ?? '';
                     $methodId = substr($dataHex, 0, 8);
+
                     if ($methodId === 'a9059cbb') {
-                        $toHex = '41' . substr($dataHex, 8, 40); // 地址 20 bytes
+                        // 取第一个参数 word
+                        $addressWord = substr($dataHex, 8, 64); // methodId 后的 64 hex
+                        $addressHex20 = substr($addressWord, 24, 40); // 取最后 20 bytes (40 hex)
+                        $toHex = '41' . $addressHex20;
+
                         $amountHex = substr($dataHex, 48);   // 剩下的是金额
                         $amount = hexdec($amountHex) / 1_000_000;
 
                         $to = $this->base58Check($toHex);
+
                         if (!$this->monitorAdapter->isMonitorAddress($to) && !$this->monitorAdapter->isMonitorAddress($parameter['owner_address'])) {
                             continue;
                         }
@@ -173,7 +179,14 @@ class TronMonitorProcess extends AbstractProcess
         if ($bin === false) {
             return '';
         }
-        return (new Base58())->encode($bin);
+
+        $hash0 = hash('sha256', $bin, true);
+        $hash1 = hash('sha256', $hash0, true);
+        $checksum = substr($hash1, 0, 4);
+
+        $payload = $bin . $checksum;
+
+        return (new Base58())->encode($payload); // 确保 Base58 encode 接受二进制
     }
 
     private function getCurrentBlock(): int
