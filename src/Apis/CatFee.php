@@ -128,9 +128,10 @@ class CatFee extends AbstractApi
             if ($data['status'] == 'DELEGATE_SUCCESS') {
                 return $data;
             }
+            sleep(3);
             return $this->getOrderDetail($id);
         } catch (Exception $e) {
-            sleep(1);
+            sleep(3);
             return $this->getOrderDetail($id);
         }
     }
