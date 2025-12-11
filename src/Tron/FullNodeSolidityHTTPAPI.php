@@ -27,7 +27,7 @@ class FullNodeSolidityHTTPAPI
             ],
             'debug' => true,
         ];
-        Logger::debug('solidity节点 => ' . $fullNodeBaseURL);
+//        Logger::debug('solidity节点 => ' . $fullNodeBaseURL);
         $this->client = $clientFactory->create(array_merge($options, ['base_uri' => $fullNodeBaseURL . '/walletsolidity']));
     }
 }

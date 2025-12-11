@@ -546,11 +546,11 @@ class TronApi
                 'owner_address' => $address,
                 "visible" => true,
             ];
-            Logger::debug("params => " . json_encode($params));
+//            Logger::debug("params => " . json_encode($params));
 
             $res = $this->wallet->post('/wallet/triggersmartcontract', $params, $this->service->getCacheApiKeys());
             $contents = $res->getBody()->getContents();
-            Logger::debug("📥 查询usdt余额返回 => " . $contents);
+//            Logger::debug("📥 查询usdt余额返回 => " . $contents);
             $json = json_decode($contents, true);
             if (!empty($json['constant_result'])) {
                 $balance = hexdec($json['constant_result'][0]);
