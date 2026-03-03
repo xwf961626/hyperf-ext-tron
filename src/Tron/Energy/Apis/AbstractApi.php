@@ -104,18 +104,21 @@ abstract class AbstractApi implements ApiInterface
             'headers' => $headers,
             'http_errors' => false
         ];
-        Logger::info("post => $baseUrl $path ".json_encode($options));
+        Logger::info("post => $baseUrl $path  $this->apiSecret".json_encode($options));
         return $client->post($path, $options);
     }
 
     protected function _get($path, $params = [], $headers = [])
     {
-        $client = GuzzleClient::coroutineClient(['base_uri' => $this->getBaseUrl()]);
-        return $client->get($path, [
+        $options = [
             'query' => $params,
             'headers' => $headers,
             'http_errors' => false
-        ]);
+        ];
+        $baseUrl = $this->getBaseUrl();
+        Logger::info("get =>$baseUrl $path $this->apiSecret".json_encode($options));
+        $client = GuzzleClient::coroutineClient(['base_uri' => $baseUrl]);
+        return $client->get($path, $options);
     }
 
     public function getApiKey(): string
