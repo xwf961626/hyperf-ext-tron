@@ -85,7 +85,10 @@ class TronService
         if ($aliasName = $request->input('alias_name')) {
             $updates['alias_name'] = $aliasName;
         }
-        return $api->update($updates);
+        $result = $api->update($updates);
+        // 更新EnergyApiFactory的配置
+        $this->apiFactory->updateConfig($api->name);
+        return $result;
     }
 
     public function deleteApiCache()

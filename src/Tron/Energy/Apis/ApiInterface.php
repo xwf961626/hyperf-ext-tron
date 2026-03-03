@@ -3,11 +3,12 @@
 namespace William\HyperfExtTron\Tron\Energy\Apis;
 
 use Hyperf\HttpServer\Contract\RequestInterface;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\ResourceDelegate;
 
 interface ApiInterface
 {
-    public function init($configs);
+    public function init(Api $configs);
 
     public function validate($params);
 

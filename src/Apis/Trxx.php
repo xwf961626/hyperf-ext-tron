@@ -5,6 +5,7 @@ namespace William\HyperfExtTron\Apis;
 use Exception;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use William\HyperfExtTron\Helper\Logger;
+use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 

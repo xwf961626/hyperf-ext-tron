@@ -25,9 +25,8 @@ class EnergyApiFactory
 
     public function __construct(protected Cache $cache)
     {
-        $configs = config('tron.apis');
-        $this->configs = $configs;
-        foreach ($configs as $config) {
+        $apis = config('tron.apis');
+        foreach ($apis as $config) {
             $class = $config['class'];
             $instance = $this->create($class);
             $this->instances[$instance->name()] = $instance;
@@ -40,7 +39,6 @@ class EnergyApiFactory
     {
         /** @var ApiInterface $instance */
         $instance = make($class);
-        $config = $this->configs[$instance->name()];
         if (!$api = Api::where('name', $instance->name())->first()) {
             $api = Api::create([
                 'name' => $instance->name(),
@@ -50,8 +48,19 @@ class EnergyApiFactory
             $this->cache->delete(TronService::API_LIST_CACHE_KEY);
         }
         $instance->setModel($api);
-        $instance->init($config);
+        $instance->init($api);
         return $instance;
+    }
+
+    public function updateConfig($apiName)
+    {
+        Logger::debug("更新接口配置$apiName");
+        if (isset($this->instances[$apiName])) {
+            $instance = $this->instances[$apiName];
+            $this->create(get_class($instance));
+        } else {
+            Logger::debug("接口未找到$apiName");
+        }
     }
 
     public function handleApiCallback(string $name, RequestInterface $request, ResponseInterface $response): mixed
