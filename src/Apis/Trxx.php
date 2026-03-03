@@ -12,16 +12,10 @@ use William\HyperfExtTron\Tron\Energy\Apis\AbstractApi;
 class Trxx extends AbstractApi
 {
     const API_NAME = 'trxx';
-    protected string $baseUrl = 'https://trxx.io';
+    protected ?string $baseUrl = 'https://trxx.io';
     private $delegateResponseData;
     private ResourceDelegate $order;
 
-
-    public function init($configs)
-    {
-        parent::init($configs);
-        $this->callbackUrl = $this->model->callback_url ?? $configs['callback_url'];
-    }
 
     public function getBalance(): float
     {

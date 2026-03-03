@@ -19,7 +19,7 @@ abstract class AbstractApi implements ApiInterface
     public ?Api $model;
 
     protected string $apiKey = '';
-    protected string $baseUrl = '';
+    protected ?string $baseUrl = '';
 
     protected string $apiSecret = '';
 

@@ -14,7 +14,7 @@ class Weidubot extends AbstractApi
 {
     const API_NAME = 'weidu';
     protected string $apiKey = '';
-    protected string $baseUrl = 'https://weidubot.cc';
+    protected ?string $baseUrl = 'https://weidubot.cc';
     protected string $apiSecret;
     private array $delegateResponseData = [];
     private ResourceDelegate $order;
@@ -118,14 +118,6 @@ class Weidubot extends AbstractApi
         if (!in_array($params['period'], $allowTimes)) {
             throw new \Exception('时长错误 ' . $params['period'] . '：只允许' . json_encode($allowTimes));
         }
-    }
-
-
-    public function init($configs)
-    {
-        $this->apiKey = $this->model->api_key ?? $configs['api_key'];
-        $this->baseUrl = $configs['base_url'];
-        $this->apiSecret = $this->model->api_secret ?? $configs['api_secret'];
     }
 
     /**

@@ -14,18 +14,11 @@ use William\HyperfExtTron\Tron\Energy\Attributes\EnergyApi;
 class Trongas extends AbstractApi
 {
     const API_NAME = 'trongas';
-    protected string $baseUrl = "https://trongas.io";
+    protected ?string $baseUrl = "https://trongas.io";
     protected string $username = '';
 
     private mixed $delegateResponseData;
     private ResourceDelegate $order;
-
-    public function init($configs)
-    {
-        $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
-        $this->baseUrl = $configs['baseUrl'];
-        $this->username = $this->model->api_secret ?? $configs['username'];
-    }
 
     public function delegateHandler(ResourceDelegate $delegate): string
     {

@@ -13,18 +13,10 @@ use function Hyperf\Config\config;
 class CatFee extends AbstractApi
 {
     const API_NAME = 'cateFee';
-    protected string $baseUrl = 'https://api.catfee.io';
+    protected ?string $baseUrl = 'https://api.catfee.io';
     private mixed $delegateResponseData;
     private ResourceDelegate $order;
 
-
-    public function init($configs)
-    {
-        $configs = config('tron.apis')[self::API_NAME];
-        $this->apiKey = $this->model->api_key ?? $configs['apiKey'];
-        $this->apiSecret = $this->model->api_secret ?? $configs['apiSecret'];
-        $this->baseUrl = $configs['baseUrl'];
-    }
 
     public function validate($params)
     {
