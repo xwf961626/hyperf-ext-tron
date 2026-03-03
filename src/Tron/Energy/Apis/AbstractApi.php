@@ -127,9 +127,9 @@ abstract class AbstractApi implements ApiInterface
 
     public function init(Api $configs)
     {
-        $this->apiKey = $this->model->api_key ?: $configs['apiKey'] ?? "";
-        $this->apiSecret = $this->model->api_secret ?: $configs['apiSecret'] ?? "";
-        $this->baseUrl = $configs['baseUrl'];
+        $this->apiKey = $this->model->api_key;
+        $this->apiSecret = $this->model->api_secret;
+        $this->baseUrl = $this->model->url;
     }
 
     protected function afterDelegateSuccess(): void
