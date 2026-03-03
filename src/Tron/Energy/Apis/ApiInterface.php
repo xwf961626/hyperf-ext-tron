@@ -8,7 +8,7 @@ use William\HyperfExtTron\Model\ResourceDelegate;
 
 interface ApiInterface
 {
-    public function init(Api $configs);
+    public function init($configs);
 
     public function validate($params);
 

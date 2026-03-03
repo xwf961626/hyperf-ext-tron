@@ -26,21 +26,14 @@ abstract class AbstractApi implements ApiInterface
     protected string $apiSecret = '';
 
     protected ?string $callbackUrl = null;
-    protected TronService $tronService;
 
     public function __construct(protected ResponseInterface $response)
     {
-        $this->tronService = make(TronService::class);
     }
 
-    public function refreshConfigs(): void
+    public function refreshConfigs()
     {
-        $configs = $this->tronService->getApiConfig($this->name());
-        Logger::debug("当前接口配置：".json_encode($configs));
-        $this->apiKey = $configs['api_key'];
-        $this->apiSecret = $configs['api_secret'];
-        $this->baseUrl = $configs['url'];
-        $this->callbackUrl = $configs['callback_url'];
+
     }
 
     public function delegate(string $toAddress, int $power, mixed $time, int $userId = 0, string $resource = 'ENERGY'): ResourceDelegate
@@ -145,11 +138,12 @@ abstract class AbstractApi implements ApiInterface
         return $this->baseUrl;
     }
 
-    public function init(Api $configs)
+    public function init($configs)
     {
-        $this->apiKey = $configs->api_key;
-        $this->apiSecret = $configs->api_secret;
-        $this->baseUrl = $configs->url;
+        $this->model = Api::find($configs['id']);
+        $this->apiKey = $configs['api_key'];
+        $this->apiSecret = $configs['api_secret'];
+        $this->baseUrl = $configs['url'];
         Logger::info("重置配置：apiKey={$this->apiKey}, baseUrl={$this->baseUrl}, apiSecret={$this->apiSecret}");
     }
 

@@ -22,6 +22,7 @@ class EnergyApiFactory
     protected array $instances = [];
     protected array $configs = [];
     private mixed $_classes = [];
+    const API_LIST_CACHE_KEY = 'api_list';
 
     public function __construct(protected Cache $cache)
     {
@@ -51,17 +52,6 @@ class EnergyApiFactory
         $instance->setModel($api);
         $instance->init($api);
         return $instance;
-    }
-
-    public function updateConfig($apiName)
-    {
-        Logger::debug("更新接口配置$apiName");
-        if (isset($this->instances[$apiName])) {
-            $instance = $this->instances[$apiName];
-            $this->create(get_class($instance));
-        } else {
-            Logger::debug("接口未找到$apiName");
-        }
     }
 
     public function handleApiCallback(string $name, RequestInterface $request, ResponseInterface $response): mixed
@@ -97,6 +87,33 @@ class EnergyApiFactory
 
     public function get(string $class): ApiInterface
     {
-        return $this->_classes[$class];
+        /** @var ApiInterface $instance */
+        $instance = $this->_classes[$class];
+        $configs = $this->getApiConfig($instance->name());
+        $instance->init($configs);
+        return $instance;
+    }
+
+    public function getApiList(?RequestInterface $request = null): \Hyperf\Collection\Collection|array
+    {
+        $cache = $this->cache->get(self::API_LIST_CACHE_KEY);
+        if ($cache) {
+            return json_decode($cache, true);
+        } else {
+            $results = Api::orderBy('weight', 'desc')->where('status', 'active')->get()->toArray();
+            $this->cache->set(self::API_LIST_CACHE_KEY, json_encode($results));
+            return $results;
+        }
+    }
+
+    public function getApiConfig($name): ?array
+    {
+        $apiList = $this->getApiList();
+        foreach ($apiList as $api) {
+            if ($api['name'] == $name) {
+                return $api;
+            }
+        }
+        return null;
     }
 }
