@@ -10,6 +10,8 @@ use William\HyperfExtTron\Helper\Logger;
 use William\HyperfExtTron\Model\Api;
 use William\HyperfExtTron\Model\ResourceDelegate;
 use William\HyperfExtTron\Tron\Energy\Utils;
+use William\HyperfExtTron\Tron\TronService;
+use function Phper666\JWTAuth\make;
 
 /**
  * @property Api $model
@@ -24,9 +26,21 @@ abstract class AbstractApi implements ApiInterface
     protected string $apiSecret = '';
 
     protected ?string $callbackUrl = null;
+    protected TronService $tronService;
 
     public function __construct(protected ResponseInterface $response)
     {
+        $this->tronService = make(TronService::class);
+    }
+
+    public function refreshConfigs(): void
+    {
+        $configs = $this->tronService->getApiConfig($this->name());
+        Logger::debug("当前接口配置：".json_encode($configs));
+        $this->apiKey = $configs['api_key'];
+        $this->apiSecret = $configs['api_secret'];
+        $this->baseUrl = $configs['url'];
+        $this->callbackUrl = $configs['callback_url'];
     }
 
     public function delegate(string $toAddress, int $power, mixed $time, int $userId = 0, string $resource = 'ENERGY'): ResourceDelegate

@@ -58,6 +58,18 @@ class TronService
         }
     }
 
+    public function getApiConfig($name): ?array
+    {
+        $apiList = $this->getApiList();
+        foreach ($apiList as $api) {
+            if ($api['name'] == $name) {
+                return $api;
+            }
+        }
+        return null;
+    }
+
+
     public function editApi(RequestInterface $request)
     {
         $id = $request->input('id');
@@ -86,8 +98,6 @@ class TronService
             $updates['alias_name'] = $aliasName;
         }
         $result = $api->update($updates);
-        // 更新EnergyApiFactory的配置
-        $this->apiFactory->updateConfig($api->name);
         return $result;
     }
 

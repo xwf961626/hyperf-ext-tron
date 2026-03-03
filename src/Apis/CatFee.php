@@ -149,6 +149,7 @@ class CatFee extends AbstractApi
 
     private function createRequest($path, $method, $queryParams)
     {
+        $this->refreshConfigs();
         // 生成请求头
         $timestamp = $this->generateTimestamp();
 

@@ -126,6 +126,7 @@ class Weidubot extends AbstractApi
      */
     public function post(string $url, array $params)
     {
+        $this->refreshConfigs();
         $body = json_encode($params);
         $response = $this->_post($url, $params, $this->getHeaders());
         $contents = $response->getBody()->getContents();
@@ -159,6 +160,7 @@ class Weidubot extends AbstractApi
 
     public function getBalance(): float
     {
+        $this->refreshConfigs();
         $response = $this->_get('/api/v2/user_info', [], $this->getHeaders());
         $contents = $response->getBody()->getContents();
         if ($response->getStatusCode() !== 200) {

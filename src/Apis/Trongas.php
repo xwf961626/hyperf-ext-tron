@@ -22,6 +22,7 @@ class Trongas extends AbstractApi
 
     public function delegateHandler(ResourceDelegate $delegate): string
     {
+        $this->refreshConfigs();
         $params = [
             'apiKey' => $this->apiKey,
             'resType' => 'ENERGY',

@@ -19,6 +19,7 @@ class Trxx extends AbstractApi
 
     public function getBalance(): float
     {
+        $this->refreshConfigs();
         $resp = $this->_get('/api/v1/frontend/index-data', [], ['API-KEY' => $this->apiKey]);
         $contents = $resp->getBody()->getContents();
         if ($resp->getStatusCode() != 200) {
@@ -35,7 +36,6 @@ class Trxx extends AbstractApi
     {
         //租赁周期,1H/1D/3D/30D
         //H表示1小时，D表示天
-
         $params = [
             'energy_amount' => $delegate->quantity,
             'period' => $delegate->time,
@@ -96,6 +96,7 @@ class Trxx extends AbstractApi
      */
     public function orderQuery($tradeNo): array
     {
+        $this->refreshConfigs();
         $max = 100;
         $attempts = 0;
         while ($attempts < $max) {
@@ -214,6 +215,7 @@ class Trxx extends AbstractApi
 
     private function post(string $path, array $data)
     {
+        $this->refreshConfigs();
         $timestamp = time();
         ksort($data);
         $json_data = json_encode($data, JSON_UNESCAPED_SLASHES);
