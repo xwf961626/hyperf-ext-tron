@@ -85,11 +85,14 @@ class EnergyApiFactory
         }
     }
 
-    public function get(string $class): ApiInterface
+    public function get(string $class): ?ApiInterface
     {
         /** @var ApiInterface $instance */
         $instance = $this->_classes[$class];
         $configs = $this->getApiConfig($instance->name());
+        if(!$configs) {
+            return null;
+        }
         $instance->init($configs);
         return $instance;
     }
@@ -109,6 +112,7 @@ class EnergyApiFactory
     public function getApiConfig($name): ?array
     {
         $apiList = $this->getApiList();
+
         foreach ($apiList as $api) {
             if ($api['name'] == $name) {
                 return $api;
