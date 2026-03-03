@@ -47,6 +47,7 @@ class EnergyApiFactory
             ]);
             $this->cache->delete(TronService::API_LIST_CACHE_KEY);
         }
+        Logger::debug("重置api=>".json_encode($api));
         $instance->setModel($api);
         $instance->init($api);
         return $instance;

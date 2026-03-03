@@ -97,12 +97,15 @@ abstract class AbstractApi implements ApiInterface
 
     protected function _post($path, $params = [], $headers = [])
     {
-        $client = GuzzleClient::coroutineClient(['base_uri' => $this->getBaseUrl()]);
-        return $client->post($path, [
+        $baseUrl = $this->getBaseUrl();
+        $client = GuzzleClient::coroutineClient(['base_uri' => $baseUrl]);
+        $options = [
             'json' => $params,
             'headers' => $headers,
             'http_errors' => false
-        ]);
+        ];
+        Logger::info("post => $baseUrl $path ".json_encode($options));
+        return $client->post($path, $options);
     }
 
     protected function _get($path, $params = [], $headers = [])
