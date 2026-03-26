@@ -17,6 +17,7 @@ use Hyperf\Redis\RedisFactory;
 use William\HyperfExtTron\Helper\GuzzleClient;
 use William\HyperfExtTron\Helper\Logger;
 use Elliptic\EC;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use kornrunner\Secp256k1;
@@ -40,6 +41,7 @@ class TronApi
     protected TronGridApi $tronGrid;
     private $cachePrefix = 'ext-tron-';
     protected RedisLock $lock;
+    public $respBody = null;
 
     public function __construct(protected TronService $service, RedisFactory $redisFactory)
     {
@@ -104,14 +106,15 @@ class TronApi
      * @return string 哈希
      * @throws GuzzleException
      */
-    public function delegateResource(string $ownerAddress,
-                                     string $resource,
-                                     string $receiverAddress,
-                                     int    $balance,
-                                     int    $permissionId,
-                                     bool   $lock = false,
-                                     int    $lockPeriod = 0): string
-    {
+    public function delegateResource(
+        string $ownerAddress,
+        string $resource,
+        string $receiverAddress,
+        int    $balance,
+        int    $permissionId,
+        bool   $lock = false,
+        int    $lockPeriod = 0
+    ): string {
         $params = [
             'owner_address' => $ownerAddress,
             'resource' => $resource,
@@ -153,8 +156,7 @@ class TronApi
         string $receiverAddress,
         float  $balance,
         int    $permissionId
-    ): string
-    {
+    ): string {
         $params = [
             'owner_address' => $ownerAddress,
             'resource' => $resource,
@@ -322,7 +324,7 @@ class TronApi
 
         if ($resp->getStatusCode() == 200) {
             $result = json_decode($resp->getBody()->getContents());
-//            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            //            Logger::info("📥 资源返回 => " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
             return AccountResource::of($result);
         } else {
             $content = $resp->getBody()->getContents();
@@ -455,6 +457,9 @@ class TronApi
         });
     }
 
+    /**
+     * @throws Exception
+     */
     public function getTransactions($address, $startTime, $limit = 200)
     {
         $req = new TransactionRequest();
@@ -465,25 +470,43 @@ class TronApi
         return $this->getTransaction($address, $req);
     }
 
+    /**
+     * @throws Exception
+     */
     public function getTransaction($address, TransactionRequest $req)
     {
         $query = $req->getSdkResult();
-        Logger::info("参数: " . json_encode($query));
+        Logger::info("参数", $query);
+
+        $response = null;
 
         try {
-// 'https://api.trongrid.io/v1/accounts/'.trim($text).'/transactions/trc20?limit=15&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
             $uri = '/v1/accounts/' . trim($address) . '/transactions/trc20';
-            Logger::info("查询交易记录：$uri " . json_encode($query));
-            $response = $this->tronGrid->get($uri, $query, $this->service->getCacheApiKeys());
+            Logger::info("查询交易记录：$uri", $query);
+
+            $response = $this->tronGrid->get(
+                $uri,
+                $query,
+                $this->service->getCacheApiKeys()
+            );
+
+            $body = (string) $response->getBody();
+
             if ($response->getStatusCode() == 200) {
-                $body = $response->getBody()->getContents();
                 return json_decode($body);
             }
 
-            return null;
-        } catch (\Exception $e) {
-            Logger::error($e->getMessage());
-            return null;
+            Logger::error("{$address} 查询失败：" . $body);
+            throw new Exception("{$address} 查询交易记录失败");
+        } catch (\Throwable $e) {
+
+            if ($response) {
+                $this->respBody = (string) $response->getBody();
+            }
+
+            Logger::error("异常: " . $e->getMessage());
+
+            throw new Exception($e->getMessage(), 0, $e);
         }
     }
 
@@ -546,11 +569,11 @@ class TronApi
                 'owner_address' => $address,
                 "visible" => true,
             ];
-//            Logger::debug("params => " . json_encode($params));
+            //            Logger::debug("params => " . json_encode($params));
 
             $res = $this->wallet->post('/wallet/triggersmartcontract', $params, $this->service->getCacheApiKeys());
             $contents = $res->getBody()->getContents();
-//            Logger::debug("📥 查询usdt余额返回 => " . $contents);
+            //            Logger::debug("📥 查询usdt余额返回 => " . $contents);
             $json = json_decode($contents, true);
             if (!empty($json['constant_result'])) {
                 $balance = hexdec($json['constant_result'][0]);
